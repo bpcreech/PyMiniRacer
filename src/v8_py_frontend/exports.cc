@@ -149,14 +149,4 @@ LIB_EXPORT auto mr_heap_snapshot(MiniRacer::Context* mr_context,
   return mr_context->HeapSnapshot(callback, cb_data).release();
 }
 
-LIB_EXPORT auto mr_full_eval_call_count(MiniRacer::Context* mr_context)
-    -> uint64_t {
-  return mr_context->FullEvalCallCount();
-}
-
-LIB_EXPORT auto mr_function_eval_call_count(MiniRacer::Context* mr_context)
-    -> uint64_t {
-  return mr_context->FunctionEvalCallCount();
-}
-
 }  // end extern "C"
