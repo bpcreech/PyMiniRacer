@@ -130,6 +130,14 @@ LIB_EXPORT auto mr_splice_array(MiniRacer::Context* mr_context,
       .release();
 }
 
+LIB_EXPORT auto mr_call_function(MiniRacer::Context* mr_context,
+                                 MiniRacer::BinaryValue* func_ptr,
+                                 MiniRacer::BinaryValue* this_ptr,
+                                 MiniRacer::BinaryValue* argv)
+    -> MiniRacer::BinaryValue* {
+  return mr_context->CallFunction(func_ptr, this_ptr, argv).release();
+}
+
 // FOR DEBUGGING ONLY
 LIB_EXPORT auto mr_heap_snapshot(MiniRacer::Context* mr_context,
                                  MiniRacer::Callback callback,

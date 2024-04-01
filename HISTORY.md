@@ -8,6 +8,11 @@
     including recursively (i.e., you can read Objects embedded in other objects, and
     embed your own).
 
+- Added ability to directly call `JSFunction` objects from Python. E.g.,
+    `mr.eval("a => a*a")(4)` parses the given number-squaring code into a function,
+    returns that function to Python, calls it with the number `4`, and recieves the
+    result of `16`.
+
 - Added a `JSUndefined` Python object to model JavaScript `undefined`. This is needed to
     properly implement the above interface for reading Object and Array elements.
     *Unfortunately, this may present a breaking change for users who assume JavaScript

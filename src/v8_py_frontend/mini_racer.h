@@ -52,6 +52,9 @@ class Context {
                    int32_t start,
                    int32_t delete_count,
                    BinaryValue* new_val) -> BinaryValue::Ptr;
+  auto CallFunction(BinaryValue* func_ptr,
+                    BinaryValue* this_ptr,
+                    BinaryValue* argv) -> BinaryValue::Ptr;
 
  private:
   template <typename Runnable>

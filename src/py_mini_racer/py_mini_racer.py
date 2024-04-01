@@ -184,6 +184,9 @@ class JSArray(MutableSequence, JSObject):
 class JSFunction(JSMappedObject):
     """JavaScript function."""
 
+    def __call__(self, *args, this=None):
+        return self._ctx.call_function(self._bv_holder.bv_ptr, *args, this=this)
+
 
 class JSSymbol(JSMappedObject):
     """JavaScript symbol."""
@@ -362,6 +365,14 @@ def _build_dll_handle(dll_path) -> ctypes.CDLL:
         _MiniRacerBinaryValuePtr,
     ]
     handle.mr_splice_array.restype = _MiniRacerBinaryValuePtr
+
+    handle.mr_call_function.argtypes = [
+        ctypes.c_void_p,
+        _MiniRacerBinaryValuePtr,
+        _MiniRacerBinaryValuePtr,
+        _MiniRacerBinaryValuePtr,
+    ]
+    handle.mr_call_function.restype = _MiniRacerBinaryValuePtr
 
     handle.mr_set_hard_memory_limit.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
 
@@ -767,6 +778,17 @@ class MiniRacer:
         res = self._dll.mr_splice_array(self.ctx, bv_ptr, index, 0, new_val_bv_ptr)
         # Convert the value just to convert any exceptions (and GC the result)
         _ = self._binary_value_ptr_to_python(res)
+
+    def call_function(self, func_ptr: _MiniRacerBinaryValuePtr, *args, this=None):
+        argv = self.eval("[]")
+        for arg in args:
+            argv.append(arg)
+
+        argv_ptr = self._python_to_binary_value_ptr(argv)
+        this_ptr = self._python_to_binary_value_ptr(this)
+
+        res = self._dll.mr_call_function(self.ctx, func_ptr, this_ptr, argv_ptr)
+        return self._binary_value_ptr_to_python(res)
 
     def set_hard_memory_limit(self, limit: int) -> None:
         """Set a hard memory limit on this V8 isolate.
