@@ -4,6 +4,7 @@
 import pytest
 from py_mini_racer import (
     JSEvalException,
+    JSTimeoutException,
     MiniRacer,
 )
 
@@ -57,3 +58,12 @@ Error: asdf
     at func (<anonymous>:2:11)
 """
     )
+
+
+def test_timeout():
+    mr = MiniRacer()
+    func = mr.eval("() => { while(1) { } }")
+    with pytest.raises(JSTimeoutException) as exc_info:
+        func(timeout_sec=1)
+
+    assert exc_info.value.args[0] == "JavaScript was terminated by timeout"

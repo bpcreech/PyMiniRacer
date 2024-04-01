@@ -133,9 +133,12 @@ LIB_EXPORT auto mr_splice_array(MiniRacer::Context* mr_context,
 LIB_EXPORT auto mr_call_function(MiniRacer::Context* mr_context,
                                  MiniRacer::BinaryValue* func_ptr,
                                  MiniRacer::BinaryValue* this_ptr,
-                                 MiniRacer::BinaryValue* argv)
-    -> MiniRacer::BinaryValue* {
-  return mr_context->CallFunction(func_ptr, this_ptr, argv).release();
+                                 MiniRacer::BinaryValue* argv,
+                                 MiniRacer::Callback callback,
+                                 void* cb_data)
+    -> MiniRacer::CancelableTaskHandle* {
+  return mr_context->CallFunction(func_ptr, this_ptr, argv, callback, cb_data)
+      .release();
 }
 
 // FOR DEBUGGING ONLY

@@ -54,7 +54,9 @@ class Context {
                    BinaryValue* new_val) -> BinaryValue::Ptr;
   auto CallFunction(BinaryValue* func_ptr,
                     BinaryValue* this_ptr,
-                    BinaryValue* argv) -> BinaryValue::Ptr;
+                    BinaryValue* argv,
+                    Callback callback,
+                    void* cb_data) -> std::unique_ptr<CancelableTaskHandle>;
 
  private:
   template <typename Runnable>
