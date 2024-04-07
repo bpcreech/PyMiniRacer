@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include "context.h"
 #include "gsl_stub.h"
 
@@ -29,10 +30,13 @@ auto ContextFactory::Get() -> ContextFactory* {
 }
 
 auto ContextFactory::MakeContext() -> uint64_t {
+  // Actually create the context before we get the lock, in case the program is
+  // making Contexts in other threads:
+  auto context = std::make_shared<Context>(current_platform_.get());
+
   const std::lock_guard<std::mutex> lock(mutex_);
   const uint64_t context_id = next_context_id_++;
-  auto context = std::make_shared<Context>(current_platform_.get());
-  contexts_[context_id] = context;
+  contexts_[context_id] = std::move(context);
   return context_id;
 }
 
@@ -47,8 +51,18 @@ auto ContextFactory::GetContext(uint64_t context_id)
 }
 
 void ContextFactory::FreeContext(uint64_t context_id) {
-  const std::lock_guard<std::mutex> lock(mutex_);
-  contexts_.erase(context_id);
+  std::shared_ptr<Context> context;
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    auto iter = contexts_.find(context_id);
+    if (iter == contexts_.end()) {
+      return;
+    }
+    context = std::move(iter->second);
+    contexts_.erase(iter);
+  }
+  // We actually destruct the context here, outside of the mutex, so that other
+  // threads can continue to create, get, and free contexts.
 }
 
 auto ContextFactory::Count() -> size_t {
