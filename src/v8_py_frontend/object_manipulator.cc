@@ -31,6 +31,10 @@ auto ObjectManipulator::GetIdentityHash(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject() && !local_obj_val->IsSymbol()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
 
   return bv_factory_->New(static_cast<int64_t>(local_obj->GetIdentityHash()),
@@ -46,6 +50,10 @@ auto ObjectManipulator::GetOwnPropertyNames(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject() && !local_obj_val->IsSymbol()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
 
   const v8::Local<v8::Array> names =
@@ -63,6 +71,10 @@ auto ObjectManipulator::Get(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject() && !local_obj_val->IsSymbol()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
   const v8::Local<v8::Value> local_key = key_ptr->ToValue(local_context);
 
@@ -86,6 +98,10 @@ auto ObjectManipulator::Set(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject() && !local_obj_val->IsSymbol()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
   const v8::Local<v8::Value> local_key = key_ptr->ToValue(local_context);
   const v8::Local<v8::Value> local_value = val_ptr->ToValue(local_context);
@@ -104,6 +120,10 @@ auto ObjectManipulator::Del(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject() && !local_obj_val->IsSymbol()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
   const v8::Local<v8::Value> local_key = key_ptr->ToValue(local_context);
 
@@ -126,6 +146,10 @@ auto ObjectManipulator::Splice(v8::Isolate* isolate,
   const v8::Context::Scope context_scope(local_context);
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  if (!local_obj_val->IsObject()) {
+    return bv_factory_->New("Not an object", type_execute_exception);
+  }
+
   const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
 
   // Array.prototype.splice doesn't exist in C++ in V8. We have to find the JS

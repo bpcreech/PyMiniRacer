@@ -33,6 +33,10 @@ auto PromiseAttacher::AttachPromiseThen(v8::Isolate* isolate,
 
   const v8::Local<v8::Value> local_promise_val =
       promise_ptr->ToValue(local_context);
+  if (!local_promise_val->IsPromise()) {
+    return bv_factory_->New("Not a promise", type_execute_exception);
+  }
+
   const v8::Local<v8::Promise> local_promise =
       local_promise_val.As<v8::Promise>();
 
