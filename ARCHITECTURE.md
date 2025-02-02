@@ -154,8 +154,8 @@ PyMiniRacer!) which wants to integrate V8 must first build it.
 ### Build PyPI wheels
 
 Because V8 takes so long to build (about 2-3 hours at present on the free GitHub Actions
-runners, and >12 hours when emulating `aarch64` on them), we want to build wheels for
-PyPI. We don't want folks to have to build V8 when they `pip install mini-racer`!
+runners), we want to build wheels for PyPI. We don't want folks to have to build V8 when
+they `pip install mini-racer`!
 
 We build wheels for many operating systems and architectures based on popular demand via
 GitHib issues. Currently the list is
@@ -237,6 +237,11 @@ multi-architecture build workflow for V8, *ahead of* the `cibuildwheel` step. So
 wouldn't simplify the overall workflow management.
 
 ### Use `sccache` to patch around build timeouts
+
+**Update: We still use `sscache` but with
+[the new Github-hosted `aarch64` runners](https://github.com/actions/runner-images/issues/10820),
+this should no longer be strictly required. We no longer run builds on emulation as
+discussed below.**
 
 As of this writing, the Linux `aarch64` builds run on emulation becaues GitHub Actions
 has no free hosted `aarch64` runners for Linux. This makes them so slow, they struggle

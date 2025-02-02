@@ -4,6 +4,7 @@ import ctypes
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
+    Any,
     ClassVar,
 )
 
@@ -23,9 +24,12 @@ from py_mini_racer._types import (
     PythonJSConvertedTypes,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 class _RawValueUnion(ctypes.Union):
-    _fields_: ClassVar[list[tuple[str, object]]] = [
+    _fields_: ClassVar[Sequence[tuple[str, Any]]] = [
         ("value_ptr", ctypes.c_void_p),
         ("bytes_val", ctypes.POINTER(ctypes.c_char)),
         ("char_p_val", ctypes.c_char_p),
@@ -35,7 +39,7 @@ class _RawValueUnion(ctypes.Union):
 
 
 class _RawValue(ctypes.Structure):
-    _fields_: ClassVar[list[tuple[str, object]]] = [
+    _fields_: ClassVar[Sequence[tuple[str, Any]]] = [
         ("value", _RawValueUnion),
         ("len", ctypes.c_size_t),
         ("type", ctypes.c_uint8),
@@ -52,7 +56,7 @@ if TYPE_CHECKING:
 class _ArrayBufferByte(ctypes.Structure):
     # Cannot use c_ubyte directly because it uses <B
     # as an internal type but we need B for memoryview.
-    _fields_: ClassVar[list[tuple[str, object]]] = [
+    _fields_: ClassVar[list[tuple[str, Any]]] = [
         ("b", ctypes.c_ubyte),
     ]
     _pack_ = 1

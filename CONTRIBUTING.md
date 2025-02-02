@@ -50,6 +50,7 @@ If you are proposing a feature:
 Ready to contribute? Here's how to set up `PyMiniRacer` for local development.
 
 !!! warning
+
     Building this package from source takes several GB of disk space and takes 1-2 hours.
 
 1. Do a quick scan through [the architecture guide](ARCHITECTURE.md) before diving in.
@@ -220,6 +221,7 @@ To make an ordinary release from `main`:
     wheels to PyPI automatically.
 
     !!! warning
+
         As of this writing, the `aarch64` Linux builds are slow because they're running on
         emulation. They time out on the first try (and second and third and...) after 6
         hours. If you "restart failed jobs", they will quickly catch up to where where they

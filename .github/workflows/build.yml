@@ -32,7 +32,7 @@ jobs:
     - name: Build
       run: python -m build --sdist
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: sdist
         path: dist/*
@@ -40,36 +40,28 @@ jobs:
 
   # We build for Linux using uraimo/run-on-arch-action@v2, which runs a container under
   # the runner in order to reach different platforms (notably Alpine with its musl) and
-  # architectures (notably aarch64) via emulation. uraimo/run-on-arch-action@v2 doesn't
-  # support Mac or Windows, so we run a separate job for those.
+  # architectures. uraimo/run-on-arch-action@v2 doesn't support Mac or Windows, so we
+  # run a separate job for those.
   linux-wheels:
-    name: Build wheel for ${{ matrix.image }}
-    runs-on: ubuntu-latest
+    name: Build wheel for ${{ matrix.config.image }} on ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
-        image:
+        config:
           # To maximize compatibility of generated wheels, we should theoreticaly build
           # on the *oldest* supported distros.
           # But V8 ships its own bullseye sysroot and links against that, so we may as
           # well run on bullseye (even though buster would provide an older supported
           # build distro):
-          - debian:bullseye
-          - arm64v8/debian:bullseye
-          # Alpine 3.19 includes a clang new enough for V8 to build (with only minor
-          # patches!). Builds on 3.19 seem incompatible with <= 3.18 due to libstdc++
-          # symbols. (And we can't just run on an old Alpine and update clang from the
-          # llvm site, because unlike Debian, the llvm project doesn't maintain
-          # updated packages for old Alpine distros.)
-          - alpine:3.19
-          - arm64v8/alpine:3.19
-        exclude:
-          # The aarch64 builds run really slowly, so let's skip them except for
-          # releases.
-          # For more info on this GitHub Actions hack, see:
-          # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional#answer-73822998
-          - image: ${{ !startsWith(github.ref, 'refs/heads/release/') && 'arm64v8/debian:bullseye' }}
-          - image: ${{ !startsWith(github.ref, 'refs/heads/release/') && 'arm64v8/alpine:3.19' }}
+          - os: ubuntu-latest  # x86_64 base OS (on which we run a container)
+            image: debian:bullseye
+          - os: ubuntu-latest
+            image: alpine:3.19
+          - os: ubuntu-24.04-arm
+            image: arm64v8/debian:bullseye
+          - os: ubuntu-24.04-arm
+            image: arm64v8/alpine:3.19
 
     steps:
     - name: Configure git
@@ -90,7 +82,7 @@ jobs:
       with:
         arch: none
         distro: none
-        base_image: ${{ matrix.image }}
+        base_image: ${{ matrix.config.image }}
 
         setup: |
           mkdir -p "${PWD}/wheels"
@@ -101,7 +93,7 @@ jobs:
         shell: /bin/sh
 
         install: |
-          case "${{ matrix.image }}" in
+          case "${{ matrix.config.image }}" in
             *debian*)
               # Let's download some system packages!
               # Note that the precise list of packages we need is intertwined not just
@@ -232,7 +224,7 @@ jobs:
           cp dist/*.whl /wheels/
           chmod a+rwx /wheels/*.whl
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: ./wheels/*
@@ -243,7 +235,7 @@ jobs:
       with:
         arch: none
         distro: none
-        base_image: ${{ matrix.image }}
+        base_image: ${{ matrix.config.image }}
 
         setup: |
           mkdir -p "${PWD}/wheels"
@@ -254,7 +246,7 @@ jobs:
         shell: /bin/sh
 
         install: |
-          case "${{ matrix.image }}" in
+          case "${{ matrix.config.image }}" in
             *debian*)
               PACKAGES=""
               PACKAGES="${PACKAGES} python3"
@@ -280,7 +272,7 @@ jobs:
 
           python3 -m venv /venv
           . /venv/bin/activate
-          case "${{ matrix.image }}" in
+          case "${{ matrix.config.image }}" in
             *debian*)
               python3 -m pip install --upgrade hatch hatch-fancy-pypi-readme hatch-mkdocs
               hatch run testinstalled:install /wheels/*.whl
@@ -307,7 +299,7 @@ jobs:
           # Note that to maximize compatibility of generated wheels, we build on the
           # *oldest* supported GitHub-hosted runners, per
           # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners
-          - os: windows-2019  # x86_64
+          - os: windows-latest  # x86_64
           - os: macos-11  # this is the earliest x86_64 runner
           - os: macos-14  # this is the earliest arm64 runner
 
@@ -336,7 +328,7 @@ jobs:
         python3 -m pip install --upgrade build
         python3 -m build --wheel
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: dist/*
@@ -359,7 +351,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
 
     - name: Compute release version
       run: |
@@ -386,7 +378,7 @@ jobs:
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
 
     - name: Make dist directory
       run: mkdir dist && cp wheels/* sdist/* dist/

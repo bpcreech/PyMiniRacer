@@ -104,7 +104,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 # An environment to test installed wheels
 [tool.hatch.envs.testinstalled]
@@ -120,7 +120,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.testinstalled.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.testinstalled.scripts]
 # A weird trick to smuggle the just-built wheel into the env, for matrix testing:
