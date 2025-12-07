@@ -1,11 +1,17 @@
 """Basic JS types tests"""
 
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from json import dumps
 from time import time
+from typing import Any, cast
 
 import pytest
+
 from py_mini_racer import (
+    JSArray,
     JSEvalException,
     JSFunction,
     JSObject,
@@ -13,21 +19,21 @@ from py_mini_racer import (
     JSUndefined,
     MiniRacer,
 )
+from tests.gc_check import assert_no_v8_objects
 
 
-def _test_round_trip(mr, val):
-    a = mr.eval("[]")
+def _test_round_trip(mr: MiniRacer, val: Any) -> None:  # noqa: ANN401
+    a = cast("JSArray", mr.eval("[]"))
     a.append(val)  # force conversion into a JS type
     assert a[0] == val  # get it back again and verify it
 
 
+@dataclass(frozen=True)
 class Validator:
-    def __init__(self, gc_check, *, round_trip=True):
-        self.gc_check = gc_check
-        self.mr = MiniRacer()
-        self.round_trip = round_trip
+    round_trip: bool = True
+    mr: MiniRacer = field(default_factory=MiniRacer)
 
-    def validate(self, py_val):
+    def __call__(self, py_val: Any) -> None:  # noqa: ANN401
         testee = py_val
         js_str = dumps(py_val)
 
@@ -37,10 +43,10 @@ class Validator:
         if self.round_trip:
             _test_round_trip(self.mr, py_val)
 
-        self.gc_check.check(self.mr)
+        assert_no_v8_objects(self.mr)
 
 
-def test_undefined(gc_check):
+def test_undefined() -> None:
     mr = MiniRacer()
     undef = mr.eval("undefined")
     assert undef is JSUndefined
@@ -49,61 +55,61 @@ def test_undefined(gc_check):
     _test_round_trip(mr, undef)
 
     del undef
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_str(gc_check):
-    v = Validator(gc_check)
-    v.validate("'a string'")
-    v.validate("'a ' + 'string'")
-    v.validate("string with null \0 byte")
+def test_str() -> None:
+    v = Validator()
+    v("'a string'")
+    v("'a ' + 'string'")
+    v("string with null \0 byte")
 
 
-def test_unicode(gc_check):
+def test_unicode() -> None:
     ustr = "\N{GREEK CAPITAL LETTER DELTA}"
     mr = MiniRacer()
     res = mr.eval("'" + ustr + "'")
     assert ustr == res
     _test_round_trip(mr, ustr)
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_numbers(gc_check):
-    v = Validator(gc_check)
-    v.validate(1)
-    v.validate(1.0)
-    v.validate(2**16)
-    v.validate(2**31 - 1)
-    v.validate(2**31)
-    v.validate(2**33)
+def test_numbers() -> None:
+    v = Validator()
+    v(1)
+    v(1.0)
+    v(2**16)
+    v(2**31 - 1)
+    v(2**31)
+    v(2**33)
 
 
-def test_arrays(gc_check):
-    v = Validator(gc_check, round_trip=False)
-    v.validate([1])
-    v.validate([])
-    v.validate([1, 2, 3])
+def test_arrays() -> None:
+    v = Validator(round_trip=False)
+    v([1])
+    v([])
+    v([1, 2, 3])
     # Nested
-    v.validate([1, 2, ["a", 1]])
+    v([1, 2, ["a", 1]])
 
 
-def test_none(gc_check):
-    v = Validator(gc_check)
-    v.validate(None)
+def test_none() -> None:
+    v = Validator()
+    v(None)
 
 
-def test_hash(gc_check):
-    v = Validator(gc_check, round_trip=False)
-    v.validate({})
-    v.validate("{}")
-    v.validate({"a": 1})
-    v.validate({" ": {"z": "www"}})
+def test_hash() -> None:
+    v = Validator(round_trip=False)
+    v({})
+    v("{}")
+    v({"a": 1})
+    v({" ": {"z": "www"}})
 
 
-def test_complex(gc_check):
-    v = Validator(gc_check, round_trip=False)
-    v.validate(
+def test_complex() -> None:
+    v = Validator(round_trip=False)
+    v(
         {
             "1": [
                 1,
@@ -112,11 +118,11 @@ def test_complex(gc_check):
                 {"z": [4, 5, 6, {"eqewr": 1, "zxczxc": "qweqwe", "z": {"1": 2}}]},
             ],
             "qwe": 1,
-        }
+        },
     )
 
 
-def test_object(gc_check):
+def test_object() -> None:
     mr = MiniRacer()
     res = mr.eval("var a = {}; a")
     assert isinstance(res, JSObject)
@@ -124,20 +130,20 @@ def test_object(gc_check):
     _test_round_trip(mr, res)
 
     del res
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_timestamp(gc_check):
+def test_timestamp() -> None:
     val = int(time())
     mr = MiniRacer()
-    res = mr.eval("var a = new Date(%d); a" % (val * 1000))
+    res = mr.eval(f"var a = new Date({val * 1000}); a")
     assert res == datetime.fromtimestamp(val, timezone.utc)
     _test_round_trip(mr, res)
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_symbol(gc_check):
+def test_symbol() -> None:
     mr = MiniRacer()
     res = mr.eval('Symbol("my_symbol")')
     assert isinstance(res, JSSymbol)
@@ -145,10 +151,10 @@ def test_symbol(gc_check):
     _test_round_trip(mr, res)
 
     del res
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_function(gc_check):
+def test_function() -> None:
     mr = MiniRacer()
     res = mr.eval("function func() {}; func")
     assert isinstance(res, JSFunction)
@@ -156,20 +162,20 @@ def test_function(gc_check):
     _test_round_trip(mr, res)
 
     del res
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_date(gc_check):
+def test_date() -> None:
     mr = MiniRacer()
     res = mr.eval("var a = new Date(Date.UTC(2014, 0, 2, 3, 4, 5)); a")
     assert res == datetime(2014, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
     _test_round_trip(mr, res)
 
     del res
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_exception(gc_check):
+def test_exception() -> None:
     js_source = """
     var f = function(arg) {
         throw 'error: '+arg
@@ -185,10 +191,10 @@ def test_exception(gc_check):
     assert "error: 42" in exc_info.value.args[0]
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_array_buffer(gc_check):
+def test_array_buffer() -> None:
     js_source = """
     var b = new ArrayBuffer(1024);
     var v = new Uint8Array(b);
@@ -196,15 +202,15 @@ def test_array_buffer(gc_check):
     b
     """
     mr = MiniRacer()
-    ret = mr.eval(js_source)
-    assert len(ret) == 1024
+    ret = cast("memoryview", mr.eval(js_source))
+    assert len(ret) == 1024  # noqa: PLR2004
     assert ret[0:1].tobytes() == b"\x42"
 
     del ret
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_array_buffer_view(gc_check):
+def test_array_buffer_view() -> None:
     js_source = """
     var b = new ArrayBuffer(1024);
     var v = new Uint8Array(b, 1, 1);
@@ -212,15 +218,15 @@ def test_array_buffer_view(gc_check):
     v
     """
     mr = MiniRacer()
-    ret = mr.eval(js_source)
+    ret = cast("memoryview", mr.eval(js_source))
     assert len(ret) == 1
     assert ret.tobytes() == b"\x42"
 
     del ret
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_shared_array_buffer(gc_check):
+def test_shared_array_buffer() -> None:
     js_source = """
     var b = new SharedArrayBuffer(1024);
     var v = new Uint8Array(b);
@@ -228,11 +234,11 @@ def test_shared_array_buffer(gc_check):
     b
     """
     mr = MiniRacer()
-    ret = mr.eval(js_source)
-    assert len(ret) == 1024
+    ret = cast("memoryview", mr.eval(js_source))
+    assert len(ret) == 1024  # noqa: PLR2004
     assert ret[0:1].tobytes() == b"\x42"
     ret[1:2] = b"\xff"
-    assert mr.eval("v[1]") == 0xFF
+    assert mr.eval("v[1]") == 0xFF  # noqa: PLR2004
 
     del ret
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)

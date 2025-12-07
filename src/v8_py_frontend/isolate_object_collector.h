@@ -38,7 +38,7 @@ class IsolateObjectCollector {
   void Collect(T* obj);
 
  private:
-  void StartCollectingLocked();
+  void EnqueueCollectionBatchLocked();
   void DoCollection();
 
   IsolateManager* isolate_manager_;
@@ -73,7 +73,7 @@ inline void IsolateObjectCollector::Collect(gsl::owner<T*> obj) {
     return;
   }
 
-  StartCollectingLocked();
+  EnqueueCollectionBatchLocked();
 }
 
 template <typename T>

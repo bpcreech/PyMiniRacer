@@ -3,10 +3,9 @@ from __future__ import annotations
 from threading import Condition
 from typing import TYPE_CHECKING
 
-from py_mini_racer._types import JSTimeoutException
+from py_mini_racer._exc import JSTimeoutException
 
 if TYPE_CHECKING:
-    from py_mini_racer._numeric import Numeric
     from py_mini_racer._types import PythonJSConvertedTypes
 
 
@@ -23,7 +22,7 @@ class SyncFuture:
         self._res: PythonJSConvertedTypes = None
         self._exc: Exception | None = None
 
-    def get(self, *, timeout: Numeric | None = None) -> PythonJSConvertedTypes:
+    def get(self, *, timeout: float | None = None) -> PythonJSConvertedTypes:
         with self._cv:
             while not self._settled:
                 if not self._cv.wait(timeout=timeout):

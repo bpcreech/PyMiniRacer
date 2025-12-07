@@ -10,7 +10,6 @@ __pycache__/
 
 # generated V8 build artifacts
 icudtl.dat
-snapshot_blob.bin
 
 # Distribution / packaging
 .Python
@@ -67,5 +66,11 @@ target/
 
 # V8 build
 v8_workspace
+
+# software supply chain liabilities:
+node_modules
+
+# MCP configuration for my dishwasher:
+.vscode
 
 *.iml

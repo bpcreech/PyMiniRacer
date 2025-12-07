@@ -4,21 +4,18 @@ import ctypes
 import sys
 from contextlib import ExitStack, contextmanager
 from importlib import resources
-from os.path import exists
-from os.path import join as pathjoin
-from sys import platform, version_info
+from pathlib import Path
+from sys import platform
 from threading import Lock
-from typing import (
-    Iterable,
-    Iterator,
-)
+from typing import TYPE_CHECKING, Protocol, cast
 
-from py_mini_racer._types import (
-    MiniRacerBaseException,
-)
-from py_mini_racer._value_handle import (
-    RawValueHandle,
-)
+from py_mini_racer._exc import MiniRacerBaseException
+from py_mini_racer._value_handle import RawValueHandle
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+    from py_mini_racer._value_handle import RawValueHandleType
 
 
 def _get_lib_filename(name: str) -> str:
@@ -36,10 +33,25 @@ def _get_lib_filename(name: str) -> str:
 MR_CALLBACK = ctypes.CFUNCTYPE(None, ctypes.c_uint64, RawValueHandle)
 
 
-def _build_dll_handle(dll_path: str) -> ctypes.CDLL:
-    handle = ctypes.CDLL(dll_path)
+if TYPE_CHECKING:
 
-    handle.mr_init_v8.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
+    class MrCallback(Protocol):
+        def __call__(
+            self, callback_id: int, raw_val_handle: RawValueHandleType
+        ) -> None: ...
+
+
+class MrCallbackDecorator(Protocol):
+    def __call__(self, cb: MrCallback) -> MrCallback: ...
+
+
+mr_callback_func = cast("MrCallbackDecorator", MR_CALLBACK)
+
+
+def _build_dll_handle(dll_path: Path) -> ctypes.CDLL:  # noqa: PLR0915
+    handle = ctypes.CDLL(str(dll_path))
+
+    handle.mr_init_v8.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
 
     handle.mr_init_context.argtypes = [MR_CALLBACK]
     handle.mr_init_context.restype = ctypes.c_uint64
@@ -176,17 +188,13 @@ def _build_dll_handle(dll_path: str) -> ctypes.CDLL:
 # V8 internationalization data:
 _ICU_DATA_FILENAME = "icudtl.dat"
 
-# V8 fast-startup snapshot; a dump of the heap after loading built-in JS
-# modules:
-_SNAPSHOT_FILENAME = "snapshot_blob.bin"
-
 DEFAULT_V8_FLAGS = ("--single-threaded",)
 
 
 class LibNotFoundError(MiniRacerBaseException):
     """MiniRacer-wrapped V8 build not found."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: Path) -> None:
         super().__init__(f"Native library or dependency not available at {path}")
 
 
@@ -195,25 +203,20 @@ class LibAlreadyInitializedError(MiniRacerBaseException):
 
     def __init__(self) -> None:
         super().__init__(
-            "MiniRacer was already initialized before the call to init_mini_racer"
+            "MiniRacer was already initialized before the call to init_mini_racer",
         )
 
 
-def _open_resource_file(filename: str, exit_stack: ExitStack) -> str:
-    if version_info >= (3, 9):
-        # resources.as_file was added in Python 3.9
-        resource_path = resources.files("py_mini_racer") / filename
+def _open_resource_file(filename: str, exit_stack: ExitStack) -> Path:
+    resource_path = resources.files("py_mini_racer") / filename
 
-        context_manager = resources.as_file(resource_path)
-    else:
-        # now-deprecated API for Pythons older than 3.9
-        context_manager = resources.path("py_mini_racer", filename)
+    context_manager = resources.as_file(resource_path)
 
-    return str(exit_stack.enter_context(context_manager))
+    return exit_stack.enter_context(context_manager)
 
 
-def _check_path(path: str) -> None:
-    if path is None or not exists(path):
+def _check_path(path: Path) -> None:
+    if not path.exists():
         raise LibNotFoundError(path)
 
 
@@ -226,24 +229,20 @@ def _open_dll(flags: Iterable[str]) -> Iterator[ctypes.CDLL]:
         meipass = getattr(sys, "_MEIPASS", None)
         if meipass is not None:
             # We are running under PyInstaller
-            dll_path = pathjoin(meipass, dll_filename)
-            icu_data_path = pathjoin(meipass, _ICU_DATA_FILENAME)
-            snapshot_path = pathjoin(meipass, _SNAPSHOT_FILENAME)
+            meipass_path = Path(meipass)
+            dll_path = meipass_path / dll_filename
+            icu_data_path = meipass_path / _ICU_DATA_FILENAME
         else:
             dll_path = _open_resource_file(dll_filename, exit_stack)
             icu_data_path = _open_resource_file(_ICU_DATA_FILENAME, exit_stack)
-            snapshot_path = _open_resource_file(_SNAPSHOT_FILENAME, exit_stack)
 
         _check_path(dll_path)
         _check_path(icu_data_path)
-        _check_path(snapshot_path)
 
         handle = _build_dll_handle(dll_path)
 
         handle.mr_init_v8(
-            " ".join(flags).encode("utf-8"),
-            icu_data_path.encode("utf-8"),
-            snapshot_path.encode("utf-8"),
+            " ".join(flags).encode("utf-8"), str(icu_data_path).encode("utf-8")
         )
 
         yield handle
@@ -255,7 +254,9 @@ _dll_handle = None
 
 
 def init_mini_racer(
-    *, flags: Iterable[str] = DEFAULT_V8_FLAGS, ignore_duplicate_init: bool = False
+    *,
+    flags: Iterable[str] = DEFAULT_V8_FLAGS,
+    ignore_duplicate_init: bool = False,
 ) -> ctypes.CDLL:
     """Initialize py_mini_racer (and V8).
 

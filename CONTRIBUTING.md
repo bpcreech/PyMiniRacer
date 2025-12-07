@@ -43,59 +43,63 @@ If you are proposing a feature:
 - Explain in detail how it would work.
 - Keep the scope as narrow as possible, to make it easier to implement.
 - Remember that this is a volunteer-driven project, and that contributions are welcome
-    :)
+  :)
 
 ## Get Started!
 
 Ready to contribute? Here's how to set up `PyMiniRacer` for local development.
 
-!!! warning
-    Building this package from source takes several GB of disk space and takes 1-2 hours.
+!!! warning Building this package from source takes several GB of disk space and takes
+1-2 hours.
 
 1. Do a quick scan through [the architecture guide](ARCHITECTURE.md) before diving in.
 
 1. Fork the `PyMiniRacer` repo on GitHub.
 
 1. If you plan to change C++ code you should probably install at least `clang-format`
-    and `clang-tidy` from [the latest stable LLVM](https://releases.llvm.org/). While
-    the `PyMiniRacer` build uses its own compiler (!) on most systems, our pre-commit
-    rules rely on the system `clang-format` and `clang-tidy`. If your versions of those
-    utilities do not match the ones `PyMiniRacer` uses on GitHub Actions, you may see
-    spurious pre-commit errors.
+   and `clang-tidy` from [the latest stable LLVM](https://releases.llvm.org/). While the
+   `PyMiniRacer` build uses its own compiler (!) on most systems, our pre-commit rules
+   rely on the system `clang-format` and `clang-tidy`. If your versions of those
+   utilities do not match the ones `PyMiniRacer` uses on GitHub Actions, you may see
+   spurious pre-commit errors.
 
     If you're on a Debian-related Linux distribution using the LLVM project's standard
-    apt packages, note that you will likely have to override `/usr/bin/clang-format`
-    and `/usr/bin/clang-tidy` to point to the latest version, i.e.,
+    apt packages, note that you will likely have to override `/usr/bin/clang-format` and
+    `/usr/bin/clang-tidy` to point to the latest version, i.e.,
     `/usr/bin/clang-format-18` and `/usr/bin/clang-tidy-18`, respectively.
 
     You can always silence local pre-commit errors with the `-n` argument to
     `git commit`. We check `pre-commit`s on every pull request using GitHub Actions, so
     you can check for errors there instead.
 
+1. Install [just](https://just.systems/).
+
+1. Install [uv](https://docs.astral.sh/uv/).
+
 1. Run some of the following:
 
     ```sh
-        # Set up a virtualenv:
-        $ python -m venv ~/my_venv
-        $ . ~/my_venv/bin/activate
-        $ pip install pre-commit hatch hatch-mkdocs
-
         # Set up a local clone of your fork:
         $ git clone git@github.com:your_name_here/PyMiniRacer.git
         $ cd PyMiniRacer/
-        $ pre-commit install  # install our pre-commit hooks
 
-        # Build and test stuff:
-        $ hatch run docs:serve  # build the docs you're reading now!
-        $ hatch build  # this may take 1-2 hours!
-        $ hatch run test:run
+        # build v8 and uv (this may take hours depending on your system!)
+        $ just build
+        # alternatively, to only build v8 and skip making the Python package:
+        $ uv run --no-project builder/v8_build.py  # will install a DLL into src/py_mini_racer
+
+        # test stuff:
+        $ uv run pytest test
+
+        # fix and lint any changes you make:
+        $ just fix
+        $ just lint
     ```
 
     You can also play with your build in the Python REPL, as follows:
 
     ```sh
-        $ hatch shell
-        $ python
+        $ uv run python
         >>> from py_mini_racer import MiniRacer
         >>> mr = MiniRacer()
         >>> mr.eval('6*7')
@@ -104,34 +108,33 @@ Ready to contribute? Here's how to set up `PyMiniRacer` for local development.
         $ exit
     ```
 
-    As a shortcut for iterative development, you can skip the `hatch build` and matrix
-    tests, and do:
-
-    ```sh
-        $ python helpers/v8_build.py [--skip-fetch]  # will install a DLL into src/py_mini_racer
-        $ PYTHONPATH=src pytest  # run the tests
-        $ PYTHONPATH=src python  # play with the build in the REPL
-        >>> from py_mini_racer import MiniRacer
-        >>> ...
-    ```
-
 1. Create a branch for local development::
 
     ```sh
-        $ git checkout -b name-of-your-bugfix-or-feature
+        $ git checkout -b feature/name-of-feature
+        # or:
+        $ git checkout -b fix/name-of-fix
     ```
 
     Now you can make your changes locally.
 
 1. When you're done making changes, check that your changes pass the linter and the
-    tests, including testing other Python versions:
+   tests, including testing other Python versions:
 
     ```sh
-       $ pre-commit run  # run formatters and linters
-       $ hatch run docs:serve  # look at the docs if you changed them!
-       $ hatch build  # this may take 1-2 hours!
-       $ hatch run test:run
-       $ hatch run test:run-coverage  # with coverage!
+       # automatically fix any trivial linting issues:
+       $ just fix
+       # check for remaining linting issues:
+       $ just lint
+       # if you changed C++ code, lint it (this takes a long time):
+       $ just clang-tidy
+       # look at the docs if you changed them:
+       $ just serve-docs
+       # build v8, and your change (this takes a long time):
+       $ just build
+       # test:
+       $ just test
+       $ just test-matrix
     ```
 
 1. Commit your changes and push your branch to GitHub::
@@ -143,30 +146,9 @@ Ready to contribute? Here's how to set up `PyMiniRacer` for local development.
     ```
 
 1. (Optional) Run the GitHub Actions build workflow on your fork to ensure that all
-    architectures work.
+   architectures work.
 
 1. Submit a pull request through the GitHub website.
-
-## Tests
-
-If you want to run the tests, you need to build the package first:
-
-```sh
-    $ hatch build
-```
-
-Then run:
-
-```sh
-    $ hatch run test
-```
-
-Or for the full test matrix:
-
-```sh
-    $ hatch run test:run
-    $ hatch run test:run-coverage  # with coverage!
-```
 
 ## Pull Request Guidelines
 
@@ -174,10 +156,10 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 1. If the pull request adds functionality, the docs should be updated. Put your new
-    functionality into a function with a docstring, and add the feature to the list in
-    README.md.
+   functionality into a function with a docstring, and add the feature to the list in
+   README.md.
 1. The pull request should work for the entire test matrix of Python versions
-    (`hatch run tests:run`).
+   (`just test-matrix`).
 
 ## Releasing `PyMiniRacer`
 
@@ -199,7 +181,6 @@ To make an ordinary release from `main`:
     ```
 
 1. Create a `feature/...` branch, and:
-
     1. Update `HISTORY.md` with a summary of changes since the last release.
 
     1. Update `src/py_mini_racer/__about__.py` with the new revision number.
@@ -217,15 +198,14 @@ To make an ordinary release from `main`:
     ```
 
 1. Observe the build process on GitHub Actions. It should build and push docs and upload
-    wheels to PyPI automatically.
+   wheels to PyPI automatically.
 
-    !!! warning
-        As of this writing, the `aarch64` Linux builds are slow because they're running on
-        emulation. They time out on the first try (and second and third and...) after 6
-        hours. If you "restart failed jobs", they will quickly catch up to where where they
-        left off due to [`sccache`](https://github.com/mozilla/sccache). The jobs should
-        *eventually* complete within the time limit. You can observe their slow progress
-        using the Ninja build status (e.g., `[1645/2312] CXX obj/v8_foo_bar.o`).
+    !!! warning As of this writing, the `aarch64` Linux builds are slow because they're
+    running on emulation. They time out on the first try (and second and third and...)
+    after 6 hours. If you "restart failed jobs", they will quickly catch up to where
+    where they left off due to [`sccache`](https://github.com/mozilla/sccache). The jobs
+    should _eventually_ complete within the time limit. You can observe their slow
+    progress using the Ninja build status (e.g., `[1645/2312] CXX obj/v8_foo_bar.o`).
 
 ### Hotfix releases
 
@@ -234,7 +214,7 @@ To hotfix a prior release:
 1. Prepare the fix as a `feature` branch as normal, and merge it into `main`.
 
 1. Pick the next revision number. This will typically be a patch-version update on the
-    current release name.
+   current release name.
 
 1. Create a new release branch for the hotfix:
 
@@ -249,15 +229,14 @@ To hotfix a prior release:
 1. Hotfix the commit(s) created in step #1 onto the new release branch.
 
 1. Create a version update commit:
-
     1. Update `HISTORY.md` with a summary of changes since the last release.
 
     1. Update `src/py_mini_racer/__about__.py` with the new revision number.
 
 1. Commit and push the new release branch to GitHub.
 
-1. Merge this branch into `main`. *All content on release branches should be included in
-    `main`.*
+1. Merge this branch into `main`. _All content on release branches should be included in
+   `main`._
 
 1. Observe the build process on GitHub Actions. It should build and push docs and upload
-    wheels to PyPI automatically.
+   wheels to PyPI automatically.

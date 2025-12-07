@@ -1,34 +1,42 @@
 """Test Python functions exposed as JS."""
 
+from __future__ import annotations
+
 from asyncio import gather
 from asyncio import run as asyncio_run
 from asyncio import sleep as asyncio_sleep
 from time import time
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import pytest
+
 from py_mini_racer import (
     JSPromise,
     JSPromiseError,
     MiniRacer,
 )
+from tests.gc_check import assert_no_v8_objects
+
+if TYPE_CHECKING:
+    from py_mini_racer import JSFunction
 
 
-def test_basic(gc_check):
+def test_basic() -> None:
     mr = MiniRacer()
 
     data = []
 
-    async def append(*args):
+    async def append(*args: Any) -> str:  # noqa: ANN401
         data.append(args)
         return "foobar"
 
-    async def run():
+    async def run() -> None:
         async with mr.wrap_py_function(append) as jsfunc:
             # "Install" our JS function on the global "this" object:
-            mr.eval("x => this.func = x")(jsfunc)
+            cast("JSFunction", mr.eval("x => this.func = x"))(jsfunc)
 
-            assert await mr.eval("this.func(42)") == "foobar"
-            assert await mr.eval('this.func("blah")') == "foobar"
+            assert await cast("JSPromise", mr.eval("this.func(42)")) == "foobar"
+            assert await cast("JSPromise", mr.eval('this.func("blah")')) == "foobar"
 
             assert data == [(42,), ("blah",)]
 
@@ -36,66 +44,63 @@ def test_basic(gc_check):
         data[:] = []
         asyncio_run(run())
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_exception(gc_check):
+def test_exception() -> None:
     # Test a Python callback which raises exceptions
     mr = MiniRacer()
 
-    data = []
-
-    async def append(*args):
+    async def append(*args: Any) -> NoReturn:  # noqa: ANN401
         del args
         boo = "boo"
         raise RuntimeError(boo)
 
-    async def run():
+    async def run() -> None:
         async with mr.wrap_py_function(append) as jsfunc:
             # "Install" our JS function on the global "this" object:
-            mr.eval("x => this.func = x")(jsfunc)
+            cast("JSFunction", mr.eval("x => this.func = x"))(jsfunc)
 
             with pytest.raises(JSPromiseError) as exc_info:
-                await mr.eval("this.func(42)")
+                await cast("JSPromise", mr.eval("this.func(42)"))
 
             assert exc_info.value.args[0].startswith(
                 """\
 JavaScript rejected promise with reason: Error: Error running Python function:
 Traceback (most recent call last):
-"""
+""",
             )
 
             assert exc_info.value.args[0].endswith(
                 """\
 
     at <anonymous>:1:6
-"""
+""",
             )
 
     for _ in range(100):
-        data[:] = []
         asyncio_run(run())
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_slow(gc_check):
+def test_slow() -> None:
     # Test a Python callback which runs slowly, but is faster in parallel.
     mr = MiniRacer()
 
     data = []
 
-    async def append(*args):
+    async def append(*args: Any) -> str:  # noqa: ANN401
         await asyncio_sleep(1)
         data.append(args)
         return "foobar"
 
-    async def run():
+    async def run() -> None:
         async with mr.wrap_py_function(append) as jsfunc:
             # "Install" our JS function on the global "this" object:
-            mr.eval("x => this.func = x")(jsfunc)
+            cast("JSFunction", mr.eval("x => this.func = x"))(jsfunc)
 
-            pending = [mr.eval("this.func(42)") for _ in range(100)]
+            pending = [cast("JSPromise", mr.eval("this.func(42)")) for _ in range(100)]
 
             assert await gather(*pending) == ["foobar"] * 100
 
@@ -112,12 +117,12 @@ def test_slow(gc_check):
     # The above should run in just over a second.
     # Just verify it didn't take 100 seconds (i.e., that things didn't execute
     # sequentially):
-    assert time() - start < 10
+    assert time() - start < 10  # noqa: PLR2004
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_call_on_exit(gc_check):
+def test_call_on_exit() -> None:
     """Checks that calls from JS made while we're trying to tear down the wrapped
     function are ignored and don't break anything."""
 
@@ -125,14 +130,14 @@ def test_call_on_exit(gc_check):
 
     data = []
 
-    async def append(*args):
+    async def append(*args: Any) -> str:  # noqa: ANN401
         data.append(args)
         return "foobar"
 
-    async def run():
+    async def run() -> None:
         async with mr.wrap_py_function(append) as jsfunc:
             # "Install" our JS function on the global "this" object:
-            mr.eval("x => this.func = x")(jsfunc)
+            cast("JSFunction", mr.eval("x => this.func = x"))(jsfunc)
 
             # Note: we don't await the promise, meaning we just start a call and never
             # finish it:
@@ -152,4 +157,4 @@ def test_call_on_exit(gc_check):
         data[:] = []
         asyncio_run(run())
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)

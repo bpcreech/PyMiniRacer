@@ -28,7 +28,7 @@ PyMiniRacer was created by [Sqreen](https://github.com/sqreen), and originally l
 As of March 2024, after a few years without updates, [I](https://bpcreech.com) have
 reached out to the original Sqreen team. We agreed that I should fork PyMiniRacer,
 giving it a new home at <https://github.com/bpcreech/PyMiniRacer> with a new PyPI
-package [`mini-racer`](https://pypi.org/project/mini-racer/) (*note: no `py-`*). It now
+package [`mini-racer`](https://pypi.org/project/mini-racer/) (_note: no `py-`_). It now
 has [a new version](https://bpcreech.com/PyMiniRacer/history/#070-2024-03-06) for the
 first time since 2021!
 
@@ -63,7 +63,7 @@ Variables are kept inside of a context:
 ```
 
 You can evaluate whole scripts within JavaScript, or define and return JavaScript
-function objects and call them from Python (*new in v0.11.0*):
+function objects and call them from Python (_new in v0.11.0_):
 
 ```python
     >>> square = ctx.eval("a => a*a")
@@ -76,7 +76,7 @@ precisely,
 [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
 and
 [`MutableSequence`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableSequence)
-instances), respectively (*new in v0.11.0*):
+instances), respectively (_new in v0.11.0_):
 
 ```python
     >>> obj = ctx.eval("var obj = {'foo': 'bar'}; obj")
@@ -132,8 +132,8 @@ MiniRacer is ES6 capable:
     False
 ```
 
-MiniRacer supports asynchronous execution using JS `Promise` instances (*new in
-v0.10.0*):
+MiniRacer supports asynchronous execution using JS `Promise` instances (_new in
+v0.10.0_):
 
 ```python
     >>> promise = ctx.eval(
@@ -142,7 +142,7 @@ v0.10.0*):
     42
 ```
 
-You can use JS `Promise` instances with Python `async` (*new in v0.10.0*):
+You can use JS `Promise` instances with Python `async` (_new in v0.10.0_):
 
 ```python
     >>> import asyncio
@@ -150,7 +150,7 @@ You can use JS `Promise` instances with Python `async` (*new in v0.10.0*):
     ...     promise = ctx.eval(
     ...         "new Promise((res, rej) => setTimeout(() => res(42), 10000))")
     ...     return await promise
-    ... 
+    ...
     >>> asyncio.run(demo())  # blocks for 10 seconds, and then:
     42
 ```
@@ -163,7 +163,7 @@ respectively:
     [JSUndefined, None]
 ```
 
-You can install callbacks from JavaScript to Python (*new in v0.12.0*):
+You can install callbacks from JavaScript to Python (_new in v0.12.0_):
 
 ```python
     >>> async def read_file(fn):
@@ -182,8 +182,8 @@ You can install callbacks from JavaScript to Python (*new in v0.12.0*):
     ['A', 'AA', 'AAA', "AA's", 'AB', 'ABC', "ABC's", 'ABCs', 'ABM', "ABM's"]
 ```
 
-*Note that adding Python callbacks may degrade the security properties of PyMiniRacer!
-See [PyMiniRacer's security goals](ARCHITECTURE.md#security-goals).*
+_Note that adding Python callbacks may degrade the security properties of PyMiniRacer!
+See [PyMiniRacer's security goals](ARCHITECTURE.md#security-goals)._
 
 MiniRacer supports [the ECMA `Intl` API](https://tc39.es/ecma402/):
 
@@ -214,16 +214,10 @@ PyMiniRacer is compatible with Python 3.8-3.12 and is based on `ctypes`.
 PyMiniRacer is distributed using [wheels](https://pythonwheels.com/) on
 [PyPI](https://pypi.org/). The wheels are intended to provide compatibility with:
 
-| OS                              | x86_64 | aarch64 |
-| ------------------------------- | ------ | ------- |
-| macOS ≥ 10.9                    | ✓      | ✓       |
-| Windows ≥ 10                    | ✓      | ✖       |
-| Ubuntu ≥ 20.04                  | ✓      | ✓       |
-| Debian ≥ 11                     | ✓      | ✓       |
-| RHEL ≥ 9                        | ✓      | ✓       |
-| other Linuxes with glibc ≥ 2.31 | ✓      | ✓       |
-| Alpine ≥ 3.19                   | ✓      | ✓       |
-| other Linux with musl ≥ 1.2     | ✓      | ✓       |
+| OS | x86_64 | aarch64 | | ------------------------------- | ------ | ------- | | macOS
+≥ 10.9 | ✓ | ✓ | | Windows ≥ 10 | ✓ | ✖ | | Ubuntu ≥ 20.04 | ✓ | ✓ | | Debian ≥ 11 | ✓ |
+✓ | | RHEL ≥ 9 | ✓ | ✓ | | other Linuxes with glibc ≥ 2.31 | ✓ | ✓ | | Alpine ≥ 3.19 | ✓
+| ✓ | | other Linux with musl ≥ 1.2 | ✓ | ✓ |
 
 If you have a up-to-date pip and it doesn't use a wheel, you might have an environment
 for which no wheel is built. Please open an issue.

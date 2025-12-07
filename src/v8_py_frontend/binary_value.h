@@ -70,20 +70,27 @@ struct BinaryValueHandle {
 
 class BinaryValue {
  public:
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
               std::string_view val,
               BinaryTypes result_type);
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter, bool val);
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
+              bool val);
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
               int64_t val,
               BinaryTypes result_type);
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
               double val,
               BinaryTypes result_type);
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
               v8::Local<v8::Context> context,
               v8::Local<v8::Value> value);
-  BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+  BinaryValue(v8::Isolate* isolate,
+              IsolateObjectDeleter isolate_object_deleter,
               v8::Local<v8::Context> context,
               v8::Local<v8::Message> message,
               v8::Local<v8::Value> exception_obj,
@@ -97,9 +104,10 @@ class BinaryValue {
 
  private:
   auto GetHandle() -> BinaryValueHandle*;
-  void SavePersistentHandle(v8::Isolate* isolate, v8::Local<v8::Value> value);
+  void SavePersistentHandle(v8::Local<v8::Value> value);
   void CreateBackingStoreRef(v8::Local<v8::Value> value);
 
+  v8::Isolate* isolate_;
   IsolateObjectDeleter isolate_object_deleter_;
   BinaryValueHandle handle_;
   std::vector<char> msg_;
@@ -111,12 +119,14 @@ class BinaryValue {
 
 class BinaryValueFactory {
  public:
-  explicit BinaryValueFactory(IsolateObjectCollector* isolate_object_collector);
+  explicit BinaryValueFactory(v8::Isolate* isolate,
+                              IsolateObjectCollector* isolate_object_collector);
 
   template <typename... Params>
   auto New(Params&&... params) -> BinaryValue::Ptr;
 
  private:
+  v8::Isolate* isolate_;
   IsolateObjectCollector* isolate_object_collector_;
 };
 
@@ -152,7 +162,7 @@ class BinaryValueRegistry {
 template <typename... Params>
 inline auto BinaryValueFactory::New(Params&&... params) -> BinaryValue::Ptr {
   return std::make_shared<BinaryValue>(
-      IsolateObjectDeleter(isolate_object_collector_),
+      isolate_, IsolateObjectDeleter(isolate_object_collector_),
       std::forward<Params>(params)...);
 }
 

@@ -1,25 +1,24 @@
 """Test loading and executing babel.js"""
 
-from os.path import dirname
-from os.path import join as pathjoin
+from __future__ import annotations
+
+from pathlib import Path
 
 from py_mini_racer import MiniRacer
+from tests.gc_check import assert_no_v8_objects
 
 
-def test_babel(gc_check):
+def test_babel() -> None:
     mr = MiniRacer()
-
-    path = pathjoin(dirname(__file__), "fixtures/babel.js")
-    with open(path, encoding="utf-8") as f:
-        babel_source = f.read()
     source = f"""
       var self = this;
-      {babel_source}
+      {(Path(__file__).parent / "fixtures" / "babel.js").read_text(encoding="utf-8")}
       babel.eval = function(code) {{
         return eval(babel.transform(code)["code"]);
       }}
     """
-    mr.eval(source)
-    assert mr.eval("babel.eval(((x) => x * x)(8))") == 64
 
-    gc_check.check(mr)
+    mr.eval(source)
+
+    assert mr.eval("babel.eval(((x) => x * x)(8))") == 64  # noqa: PLR2004
+    assert_no_v8_objects(mr)

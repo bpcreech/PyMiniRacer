@@ -21,9 +21,7 @@ extern "C" {
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
 
 /** Initialize V8. Can be called at most once per process. */
-LIB_EXPORT void mr_init_v8(const char* v8_flags,
-                           const char* icu_path,
-                           const char* snapshot_path);
+LIB_EXPORT void mr_init_v8(const char* v8_flags, const char* icu_path);
 
 /** Determine the V8 version. **/
 LIB_EXPORT auto mr_v8_version() -> char const*;

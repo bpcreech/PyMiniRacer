@@ -1,0 +1,13 @@
+--- build/config/compiler/BUILD.gn.orig	2025-12-08 22:11:59.327391066 -0500
++++ build/config/compiler/BUILD.gn	2025-12-08 22:12:03.606235239 -0500
+@@ -1331,8 +1331,8 @@
+       }
+     } else if (current_cpu == "arm64") {
+       if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
+-        cflags += [ "--target=aarch64-linux-gnu" ]
+-        ldflags += [ "--target=aarch64-linux-gnu" ]
++        # cflags += [ "--target=aarch64-linux-gnu" ]
++        # ldflags += [ "--target=aarch64-linux-gnu" ]
+       }
+     } else if (current_cpu == "mipsel") {
+       ldflags += [ "-Wl,--hash-style=sysv" ]

@@ -10,6 +10,8 @@ We base this on the Atomics.waitAsync API, which *is* part of the ECMAScript spe
 this way seems simpler.)
 """
 
+from __future__ import annotations
+
 INSTALL_SET_TIMEOUT = """
 class __TimerManager {
   constructor() {

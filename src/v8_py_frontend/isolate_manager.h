@@ -55,6 +55,8 @@ class IsolateManager {
   IsolateManager(IsolateManager&&) = delete;
   auto operator=(IsolateManager&& other) -> IsolateManager& = delete;
 
+  auto Get() -> v8::Isolate*;
+
   /** Schedules a task to run on the foreground thread, using
    * v8::TaskRunner::PostTask. Returns a future which gets the result.
    * The caller should, of course, ensure that any references bound into the
@@ -83,6 +85,10 @@ class IsolateManager {
   IsolateHolder isolate_holder_;
   std::thread thread_;
 };
+
+inline auto IsolateManager::Get() -> v8::Isolate* {
+  return isolate_holder_.Get();
+}
 
 /** Schedules a task to run on the foreground thread, using
  * v8::TaskRunner::PostTask. Awaits task completion. */

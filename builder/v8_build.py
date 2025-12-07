@@ -1,53 +1,55 @@
+from __future__ import annotations
+
 from argparse import ArgumentParser
-from errno import EEXIST
-from functools import lru_cache
+from functools import cache
 from logging import DEBUG, basicConfig, getLogger
-from os import environ, makedirs, pathsep, remove, symlink, unlink
-from os.path import abspath, dirname, exists, isdir, isfile
-from os.path import join as pathjoin
+from os import environ, pathsep
+from pathlib import Path
 from platform import machine
 from re import match
 from shlex import join as shlexjoin
 from shutil import copyfile, rmtree
 from subprocess import check_call
 from sys import executable, platform
+from typing import TYPE_CHECKING
 
 from packaging.tags import platform_tags
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+
+# ruff: noqa: S603
 
 basicConfig()
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
-ROOT_DIR = dirname(abspath(__file__))
-V8_VERSION = "branch-heads/12.6"
+ROOT_DIR = Path(__file__).absolute().parents[1]
+V8_VERSION = "branch-heads/14.3"
 
 
-def local_path(path="."):
-    """Return path relative to this file."""
-    return abspath(pathjoin(ROOT_DIR, path))
-
-
-@lru_cache(maxsize=None)
-def is_win():
+@cache
+def is_win() -> bool:
     return platform.startswith("win")
 
 
-@lru_cache(maxsize=None)
-def is_linux():
+@cache
+def is_linux() -> bool:
     return platform == "linux"
 
 
-@lru_cache(maxsize=None)
-def is_mac():
+@cache
+def is_mac() -> bool:
     return platform == "darwin"
 
 
 class UnknownArchError(RuntimeError):
-    def __init__(self, arch):
+    def __init__(self, arch: str) -> None:
         super().__init__(f"Unknown arch {arch!r}")
 
 
-@lru_cache(maxsize=None)
-def get_v8_target_cpu():
+@cache
+def get_v8_target_cpu() -> str:
     m = machine().lower()
     if m in ("arm64", "aarch64"):
         return "arm64"
@@ -65,8 +67,8 @@ def get_v8_target_cpu():
     raise UnknownArchError(m)
 
 
-@lru_cache(maxsize=None)
-def get_dll_filename():
+@cache
+def get_dll_filename() -> str:
     if is_mac():
         return "libmini_racer.dylib"
 
@@ -76,23 +78,20 @@ def get_dll_filename():
     return "libmini_racer.so"
 
 
-@lru_cache(maxsize=None)
-def get_data_files_list():
+@cache
+def get_data_files_list() -> Sequence[Path]:
     """List the files which v8 builds and then needs at runtime."""
 
     return (
         # V8 i18n data:
-        "icudtl.dat",
-        # V8 fast-startup snapshot; a dump of the heap after loading built-in JS
-        # modules:
-        "snapshot_blob.bin",
+        Path("icudtl.dat"),
         # And obviously, the V8 build itself:
-        get_dll_filename(),
+        Path(get_dll_filename()),
     )
 
 
-@lru_cache(maxsize=None)
-def is_musl():
+@cache
+def is_musl() -> bool:
     # Alpine uses musl for libc, instead of glibc. This breaks many assumptions in the
     # V8 build, so we have to reconfigure various things when running on musl libc.
     # Determining if we're on musl (or Alpine) is surprisingly complicated; the best
@@ -102,55 +101,28 @@ def is_musl():
     return any("musllinux" in t for t in platform_tags())
 
 
-@lru_cache(maxsize=None)
-def get_platform_tag():
-    """Return a pip platform tag indicating compatibility of the mini_racer binary.
-
-    See https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/.
-    """
-
-    if is_mac():
-        # pip seems finicky about platform tags with larger macos versions, so just
-        # tell arm64 is 11.0 and everything is is 10.9:
-        if get_v8_target_cpu() == "arm64":
-            return "macosx_11_0_arm64"
-
-        return "macosx_10_9_x86_64"
-
-    # return the first, meaning the most-specific, platform tag:
-    return next(platform_tags())
+@cache
+def get_workspace_path() -> Path:
+    return (ROOT_DIR / "v8_workspace").absolute()
 
 
-@lru_cache(maxsize=None)
-def get_workspace_path():
-    return local_path(pathjoin("..", "v8_workspace"))
+@cache
+def get_depot_tools_path() -> Path:
+    return get_workspace_path() / "depot_tools"
 
 
-@lru_cache(maxsize=None)
-def get_depot_tools_path():
-    return pathjoin(get_workspace_path(), "depot_tools")
+@cache
+def get_v8_path() -> Path:
+    return get_workspace_path() / "v8"
 
 
-@lru_cache(maxsize=None)
-def get_v8_path():
-    return pathjoin(get_workspace_path(), "v8")
-
-
-def unlink_if_exists(f):
-    if exists(f):
-        unlink(f)
-
-
-def run(*args, cwd, depot_tools_first=True):
+def run(*args: str, cwd: Path) -> None:
     LOGGER.debug("Calling: '%s' from working directory %s", shlexjoin(args), cwd)
     env = environ.copy()
 
-    if depot_tools_first:
-        env["PATH"] = pathsep.join([get_depot_tools_path(), environ["PATH"]])
-    else:
-        env["PATH"] = pathsep.join([environ["PATH"], get_depot_tools_path()])
-
+    env["PATH"] = pathsep.join([str(get_depot_tools_path()), environ["PATH"]])
     env["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
+
     # vpython is V8's Python environment manager; it downloads Python binaries
     # dynamically. This doesn't work on Alpine (because it downloads a glibc binary,
     # but needs a musl binary), so let's just disable it on all environments:
@@ -160,16 +132,16 @@ def run(*args, cwd, depot_tools_first=True):
     # This fails on musl (on Alpine), so let's just disable the thing:
     env["GOMA_DISABLED"] = "1"
 
-    return check_call(args, env=env, cwd=cwd)
+    check_call(args, env=env, cwd=cwd)
 
 
-def ensure_depot_tools():
-    if isdir(get_depot_tools_path()):
+def ensure_depot_tools() -> None:
+    if get_depot_tools_path().exists():
         LOGGER.debug("Using already cloned depot tools")
         return
 
     LOGGER.debug("Cloning depot tools")
-    makedirs(f"{get_workspace_path()}", exist_ok=True)
+    get_workspace_path().mkdir(parents=True, exist_ok=True)
     run(
         "git",
         "clone",
@@ -181,24 +153,24 @@ def ensure_depot_tools():
     # dependencies, e.g., on goma (which has trouble running on Alpine due to musl).
     # We just created a fresh single-use depot_tools checkout. There is no reason to
     # update it, so let's just disable that functionality:
-    open(pathjoin(get_depot_tools_path(), ".disable_auto_update"), "w").close()
+    (get_depot_tools_path() / ".disable_auto_update").write_text("")
 
     if is_win():
         # Create git.bit and maybe other shortcuts used by the Windows V8 build tools:
         run(
-            pathjoin(get_depot_tools_path(), "bootstrap", "win_tools.bat"),
+            str(get_depot_tools_path() / "bootstrap" / "win_tools.bat"),
             cwd=get_depot_tools_path(),
         )
 
 
-def ensure_v8_src(revision):
+def ensure_v8_src(revision: str) -> None:
     """Ensure that v8 src are present and up-to-date."""
 
     # We create our own .gclient config instead of creating it via fetch.py so we can
     # control (non-)installation of a sysroot.
-    gclient_file = pathjoin(get_workspace_path(), ".gclient")
-    if not isfile(gclient_file):
-        makedirs(get_workspace_path(), exist_ok=True)
+    gclient_file = get_workspace_path() / ".gclient"
+    if not gclient_file.exists():
+        get_workspace_path().mkdir(parents=True, exist_ok=True)
         if is_musl():
             # Prevent fetching of a useless Debian sysroot on Alpine.
             # We disable use of the sysroot below (see "use_sysroot"), so this is just
@@ -214,9 +186,8 @@ target_os_only = "True"
         else:
             target_os = ""
 
-        with open(gclient_file, "w") as f:
-            f.write(
-                f"""\
+        gclient_file.write_text(
+            f"""\
 solutions = [
   {{ "name"        : "v8",
     "url"         : "https://chromium.googlesource.com/v8/v8.git",
@@ -227,48 +198,46 @@ solutions = [
   }},
 ]
 {target_os}\
-"""
-            )
+""",
+        )
 
     run(
         executable,
-        pathjoin(get_depot_tools_path(), "gclient.py"),
+        str(get_depot_tools_path() / "gclient.py"),
         "sync",
         "--revision",
         f"v8@{revision}",
         cwd=get_workspace_path(),
     )
 
-    ensure_symlink(
-        local_path(pathjoin("..", "src", "v8_py_frontend")),
-        pathjoin(get_v8_path(), "custom_deps", "mini_racer"),
+    link_name = get_v8_path() / "custom_deps" / "mini_racer"
+    link_name.unlink(missing_ok=True)
+
+    link_name.symlink_to(
+        (ROOT_DIR / "src" / "v8_py_frontend").absolute(), target_is_directory=True
     )
 
 
-def apply_patch(path, patch_filename):
-    applied_patches_filename = local_path(".applied_patches")
+def apply_patch(name: str) -> None:
+    patch_filename = (ROOT_DIR / "builder" / name).absolute()
 
-    if not exists(applied_patches_filename):
-        open(applied_patches_filename, "w").close()
+    applied_patches_filename = (ROOT_DIR / "builder" / ".applied_patches").absolute()
 
-    with open(applied_patches_filename, "r+") as f:
+    if not applied_patches_filename.exists():
+        applied_patches_filename.write_text("")
+
+    with applied_patches_filename.open("r+") as f:
         applied_patches = set(f.read().splitlines())
 
-        if patch_filename in applied_patches:
+        if str(patch_filename) in applied_patches:
             return
 
-        run(
-            "patch",
-            "-p0",
-            "-i",
-            patch_filename,
-            cwd=path,
-        )
+        run("patch", "-p0", "-i", str(patch_filename), cwd=get_v8_path())
 
-        f.write(patch_filename + "\n")
+        f.write(str(patch_filename) + "\n")
 
 
-def run_build(build_dir):
+def run_build(build_dir: Path) -> None:
     """Run the actual v8 build."""
 
     # As explained in the design principles in ARCHITECTURE.md, we want to reduce the
@@ -288,8 +257,11 @@ def run_build(build_dir):
         # configuration. This can be verified by running:
         # tools/mb/mb.py lookup -b x64.release -m developer_default
         # ... from within the v8 directory.
-        "dcheck_always_on": "false",
         "is_debug": "false",
+        "v8_use_external_startup_data": "false",
+        "v8_monolithic": "true",
+        # From https://groups.google.com/g/v8-users/c/qDJ_XYpig_M/m/qe5XO9PZAwAJ:
+        "v8_monolithic_for_shared_library": "true",
         "target_cpu": f'"{get_v8_target_cpu()}"',
         "v8_target_cpu": f'"{get_v8_target_cpu()}"',
         # We sneak our C++ frontend into V8 as a symlinked "custom_dep" so
@@ -303,29 +275,35 @@ def run_build(build_dir):
         # Linux glibc, and not for Alpine (musl) at all.
         # Per tools/dev/gm.py, use the the system clang instead:
         opts["clang_base_path"] = '"/usr"'
+        if is_musl():
+            opts["clang_version"] = "21"
+
+        # TODO switch v8_workspace/v8/build/config/clang/BUILD.gn to
+        # _dir = "x86_64-alpine-linux-musl"
+        # _suffix = "-x86_64"
 
         opts["clang_use_chrome_plugins"] = "false"
         # Because we use a different clang, more warnings pop up. Ignore them:
         opts["treat_warnings_as_errors"] = "false"
 
-        # V8 currently uses a clang flag -split-threshold-for-reg-with-hint=0 which
-        # doen't exist on Alpine's mainline llvm yet. Disable it:
-        if is_musl():
-            apply_patch(
-                get_v8_path(),
-                local_path("split-threshold-for-reg-with-hint.patch"),
-            )
+        # TODO probably remove this
+        # # V8 currently uses a clang flag -split-threshold-for-reg-with-hint=0 which
+        # # doen't exist on Alpine's mainline llvm yet. Disable it:
+        # if is_musl():
+        #     apply_patch("split-threshold-for-reg-with-hint.patch")
 
-    if is_musl() and get_v8_target_cpu() == "arm64":
-        # The V8 build unhelpfully sets the clang flag --target=aarch64-linux-gnu
+    if is_musl():
+        # The V8 build unhelpfully sets the clang flag --target=SOMETHING-linux-gnu
         # on musl. The --target flag is useful when we're cross-compiling (which we're
-        # not) and we aren't on aarch64-linux-gnu, we're actually on what clang calls
-        # aarch64-alpine-linux-musl.
+        # not) and we aren't, we're actually on what clang calls
+        # x86_64-alpine-linux-musl or aarch64-alpine-linux-musl.
         # This patch just disables the spurious cflags and ldflags:
-        apply_patch(
-            get_v8_path(),
-            local_path("no-aarch64-linux-gnu-target.patch"),
-        )
+        apply_patch("no-aarch64-linux-gnu-target.patch")
+
+    if is_win() and get_v8_target_cpu() == "arm64":
+        # The V8 build unhelpfully tries to grab the x64 debugging symbols on arm.
+        # Let's turn that off:
+        apply_patch("no-x64-debugger-on-arm-windows.patch")
 
     if is_musl():
         # On various OSes, the V8 build process brings in a whole copy of the sysroot
@@ -336,75 +314,67 @@ def run_build(build_dir):
         # V8 includes its own libc++ whose headers don't seem to work on Alpine:
         opts["use_custom_libcxx"] = "false"
 
-    # We optionally use SCCACHE to speed up builds (or restart them on failure):
-    sccache_path = environ.get("SCCACHE_PATH")
-    if sccache_path is not None:
-        opts["cc_wrapper"] = f'"{sccache_path}"'
+        # Same for rust:
+        opts["rust_sysroot_absolute"] = '"/usr"'
+        opts["rustc_version"] = '"1.91.1"'
+        # TODO: Also needs a patch x86_64-alpine-linux-musl in
+        # ./v8_workspace/v8/build/config/rust.gni
+        # Also seems to be mixing libstdc++ and libc++ things and bombing out in clang.
 
-    makedirs(build_dir, exist_ok=True)
+    args_text = "\n".join(f"{n}={v}" for n, v in opts.items())
+    args_gn = f"""\
+# This file is auto-generated by v8_build.py
+{args_text}
+"""
 
-    with open(pathjoin(build_dir, "args.gn"), "w") as f:
-        f.write("# This file is auto-generated by v8_build.py")
-        f.write("\n".join(f"{n}={v}" for n, v in opts.items()))
-        f.write("\n")
+    LOGGER.info(f"Writing args.gn:\n{args_gn}")  # noqa: G004
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+    Path(build_dir / "args.gn").write_text(args_gn, encoding="utf-8")
 
     # Now generate Ninja build files:
     if is_musl():
         # depot_tools doesn't include a musl-compatible GN, so use the system one:
-        gn_bin = ("/usr/bin/gn",)
+        gn_bin: Sequence[str] = ("/usr/bin/gn",)
     else:
-        gn_bin = (
-            executable,
-            pathjoin(get_depot_tools_path(), "gn.py"),
-        )
+        gn_bin = (executable, str(get_depot_tools_path() / "gn.py"))
 
-    run(
-        *gn_bin,
-        "gen",
-        build_dir,
-        "--check",
-        cwd=get_v8_path(),
-    )
+    run(*gn_bin, "gen", str(build_dir), "--check", cwd=get_v8_path())
 
     # Finally, actually do the build:
     if is_musl():
         # depot_tools doesn't include a musl-compatible ninja, so use the system one:
-        ninja_bin = ("/usr/bin/ninja",)
+        ninja_bin: Sequence[str] = ("/usr/bin/ninja",)
     else:
-        ninja_bin = (
-            executable,
-            pathjoin(get_depot_tools_path(), "ninja.py"),
+        ninja_bin = (executable, str(get_depot_tools_path() / "ninja.py"))
+
+    if is_musl():
+        # DIY clang!
+        run(
+            "tools/clang/scripts/build.py",
+            "--without-android",
+            "--without-fuchsia",
+            "--use-system-cmake",
+            cwd=get_v8_path(),
         )
 
     run(
         *ninja_bin,
-        # "-vv",  # this is so spammy GitHub Actions struggles to show all the output
+        # "-vv",  # too much spam for GitHub Actions
         "-C",
-        build_dir,
-        pathjoin("custom_deps", "mini_racer"),
+        str(build_dir),
+        str(Path("custom_deps") / "mini_racer"),
         cwd=get_v8_path(),
     )
 
 
-def ensure_symlink(target, link_name):
-    LOGGER.debug("Creating symlink to %s on %s", target, link_name)
-    try:
-        symlink(target, link_name)
-    except OSError as e:
-        if e.errno == EEXIST:
-            remove(link_name)
-            symlink(target, link_name)
-        else:
-            raise
-
-
 def build_v8(
-    out_path,
+    out_path: Path,
     *,
-    revision=None,
-    fetch_only=False,
-    skip_fetch=False,
-):
+    revision: str | None = None,
+    fetch_only: bool = False,
+    skip_fetch: bool = False,
+) -> None:
     revision = revision or V8_VERSION
 
     ensure_depot_tools()
@@ -415,35 +385,27 @@ def build_v8(
     if fetch_only:
         return
 
-    build_dir = pathjoin(get_v8_path(), "out.gn", "build")
+    build_dir = get_v8_path() / "out.gn" / "build"
 
     run_build(build_dir)
 
     # Fish out the build artifacts:
-    makedirs(out_path, exist_ok=True)
-
-    # Create a map of actual files to in-package filenames, for Hatch to use
-    # when building the wheel:
-    artifacts = {}
+    out_path.mkdir(parents=True, exist_ok=True)
 
     for f in get_data_files_list():
-        src = pathjoin(build_dir, f)
-        dst = pathjoin(out_path, f)
+        src = build_dir / f
+        dst = out_path / f
 
         LOGGER.debug("Copying build artifact %s to %s", src, dst)
-        unlink_if_exists(dst)
+        dst.unlink(missing_ok=True)
         copyfile(src, dst)
-
-        artifacts[dst] = pathjoin("py_mini_racer", f)
 
     LOGGER.debug("Build complete!")
 
-    return artifacts
 
-
-def clean_v8(out_path):
+def clean_v8(out_path: Path) -> None:
     for f in get_data_files_list():
-        unlink_if_exists(pathjoin(out_path, f))
+        (out_path / f).unlink(missing_ok=True)
 
     rmtree(get_workspace_path(), ignore_errors=True)
 
@@ -452,7 +414,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--out-path",
-        default=pathjoin("src", "py_mini_racer"),
+        default=Path("src") / "py_mini_racer",
         help="Build destination directory",
     )
     parser.add_argument("--v8-revision", default=V8_VERSION)

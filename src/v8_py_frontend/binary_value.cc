@@ -23,10 +23,11 @@ namespace MiniRacer {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access)
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
                          v8::Local<v8::Context> context,
                          v8::Local<v8::Value> value)
-    : isolate_object_deleter_(isolate_object_deleter) {
+    : isolate_(isolate), isolate_object_deleter_(isolate_object_deleter) {
   if (value->IsNull()) {
     handle_.type = type_null;
   } else if (value->IsUndefined()) {
@@ -47,10 +48,10 @@ BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
     handle_.int_val = (value->IsTrue() ? 1 : 0);
   } else if (value->IsFunction()) {
     handle_.type = type_function;
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   } else if (value->IsSymbol()) {
     handle_.type = type_symbol;
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   } else if (value->IsDate()) {
     handle_.type = type_date;
     const v8::Local<v8::Date> date = v8::Local<v8::Date>::Cast(value);
@@ -62,32 +63,32 @@ BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
         value->ToString(context).ToLocalChecked();
 
     handle_.type = type_str_utf8;
-    handle_.len = static_cast<size_t>(
-        rstr->Utf8Length(context->GetIsolate()));  // in bytes
+    handle_.len = static_cast<size_t>(rstr->Utf8LengthV2(isolate));  // in bytes
     const size_t capacity = handle_.len + 1;
     msg_.resize(capacity);
-    rstr->WriteUtf8(context->GetIsolate(), msg_.data());
+    rstr->WriteUtf8V2(isolate, msg_.data(), capacity);
     handle_.bytes = msg_.data();
   } else if (value->IsSharedArrayBuffer() || value->IsArrayBuffer() ||
              value->IsArrayBufferView()) {
     CreateBackingStoreRef(value);
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   } else if (value->IsPromise()) {
     handle_.type = type_promise;
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   } else if (value->IsArray()) {
     handle_.type = type_array;
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   } else if (value->IsObject()) {
     handle_.type = type_object;
-    SavePersistentHandle(context->GetIsolate(), value);
+    SavePersistentHandle(value);
   }
 }
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
                          std::string_view val,
                          BinaryTypes type)
-    : isolate_object_deleter_(isolate_object_deleter) {
+    : isolate_(isolate), isolate_object_deleter_(isolate_object_deleter) {
   handle_.len = val.size();
   handle_.type = type;
   msg_.resize(handle_.len + 1);
@@ -96,26 +97,30 @@ BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
   handle_.bytes = msg_.data();
 }
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter, bool val)
-    : isolate_object_deleter_(isolate_object_deleter) {
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
+                         bool val)
+    : isolate_(isolate), isolate_object_deleter_(isolate_object_deleter) {
   handle_.len = 0;
   handle_.type = type_bool;
   handle_.int_val = val ? 1 : 0;
 }
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
                          int64_t val,
                          BinaryTypes type)
-    : isolate_object_deleter_(isolate_object_deleter) {
+    : isolate_(isolate), isolate_object_deleter_(isolate_object_deleter) {
   handle_.len = 0;
   handle_.type = type;
   handle_.int_val = val;
 }
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
                          double val,
                          BinaryTypes type)
-    : isolate_object_deleter_(isolate_object_deleter) {
+    : isolate_(isolate), isolate_object_deleter_(isolate_object_deleter) {
   handle_.len = 0;
   handle_.type = type;
   handle_.double_val = val;
@@ -123,7 +128,8 @@ BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
 
 namespace {
 // From v8/src/d8.cc:
-auto ExceptionToString(v8::Local<v8::Context> context,
+auto ExceptionToString(v8::Isolate* isolate,
+                       v8::Local<v8::Context> context,
                        v8::Local<v8::Message> message,
                        v8::Local<v8::Value> exception_obj) -> std::string {
   std::stringstream msg;
@@ -133,7 +139,7 @@ auto ExceptionToString(v8::Local<v8::Context> context,
     return (*value == nullptr) ? "<string conversion failed>" : *value;
   };
 
-  const v8::String::Utf8Value exception(context->GetIsolate(), exception_obj);
+  const v8::String::Utf8Value exception(isolate, exception_obj);
   const char* exception_string = ToCString(exception);
   if (message.IsEmpty()) {
     // V8 didn't provide any extra information about this error; just
@@ -148,7 +154,7 @@ auto ExceptionToString(v8::Local<v8::Context> context,
   } else {
     // Print (filename):(line number): (message).
     const v8::String::Utf8Value filename(
-        context->GetIsolate(), message->GetScriptOrigin().ResourceName());
+        isolate, message->GetScriptOrigin().ResourceName());
     const char* filename_string = ToCString(filename);
     const int linenum = message->GetLineNumber(context).FromMaybe(-1);
     msg << filename_string << ":" << linenum << ": " << exception_string
@@ -156,8 +162,7 @@ auto ExceptionToString(v8::Local<v8::Context> context,
     v8::Local<v8::String> sourceline;
     if (message->GetSourceLine(context).ToLocal(&sourceline)) {
       // Print line of source code.
-      const v8::String::Utf8Value sourcelinevalue(context->GetIsolate(),
-                                                  sourceline);
+      const v8::String::Utf8Value sourcelinevalue(isolate, sourceline);
       const char* sourceline_string = ToCString(sourcelinevalue);
       msg << sourceline_string << "\n";
       // Print wavy underline (GetUnderline is deprecated).
@@ -177,7 +182,7 @@ auto ExceptionToString(v8::Local<v8::Context> context,
           .ToLocal(&stack_trace_string) &&
       stack_trace_string->IsString()) {
     const v8::String::Utf8Value stack_trace(
-        context->GetIsolate(), stack_trace_string.As<v8::String>());
+        isolate, stack_trace_string.As<v8::String>());
     msg << "\n";
     msg << ToCString(stack_trace);
     msg << "\n";
@@ -186,46 +191,46 @@ auto ExceptionToString(v8::Local<v8::Context> context,
 }
 }  // end anonymous namespace
 
-BinaryValue::BinaryValue(IsolateObjectDeleter isolate_object_deleter,
+BinaryValue::BinaryValue(v8::Isolate* isolate,
+                         IsolateObjectDeleter isolate_object_deleter,
                          v8::Local<v8::Context> context,
                          v8::Local<v8::Message> message,
                          v8::Local<v8::Value> exception_obj,
                          BinaryTypes result_type)
-    : BinaryValue(isolate_object_deleter,
-                  ExceptionToString(context, message, exception_obj),
+    : BinaryValue(isolate,
+                  isolate_object_deleter,
+                  ExceptionToString(isolate, context, message, exception_obj),
                   result_type) {}
 
 auto BinaryValue::ToValue(v8::Local<v8::Context> context)
     -> v8::Local<v8::Value> {
-  v8::Isolate* isolate = context->GetIsolate();
-
   // If we've saved a handle to a v8::Persistent, we can return the exact v8
   // value to which this BinaryValue refers:
   if (persistent_handle_) {
-    return persistent_handle_->Get(isolate);
+    return persistent_handle_->Get(isolate_);
   }
 
   // Otherwise, try and rehydrate a v8::Value based on data stored in the
   // BinaryValueHandle:
 
   if (handle_.type == type_null) {
-    return v8::Null(isolate);
+    return v8::Null(isolate_);
   }
 
   if (handle_.type == type_undefined) {
-    return v8::Undefined(isolate);
+    return v8::Undefined(isolate_);
   }
 
   if (handle_.type == type_integer) {
-    return v8::Integer::New(isolate, static_cast<int32_t>(handle_.int_val));
+    return v8::Integer::New(isolate_, static_cast<int32_t>(handle_.int_val));
   }
 
   if (handle_.type == type_double) {
-    return v8::Number::New(isolate, handle_.double_val);
+    return v8::Number::New(isolate_, handle_.double_val);
   }
 
   if (handle_.type == type_bool) {
-    return v8::Boolean::New(isolate, handle_.int_val != 0);
+    return v8::Boolean::New(isolate_, handle_.int_val != 0);
   }
 
   if (handle_.type == type_date) {
@@ -233,23 +238,22 @@ auto BinaryValue::ToValue(v8::Local<v8::Context> context)
   }
 
   if (handle_.type == type_str_utf8) {
-    return v8::String::NewFromUtf8(isolate, handle_.bytes,
+    return v8::String::NewFromUtf8(isolate_, handle_.bytes,
                                    v8::NewStringType::kNormal,
                                    static_cast<int>(handle_.len))
         .ToLocalChecked();
   }
 
   // Unknown type!
-  return v8::Undefined(isolate);
+  return v8::Undefined(isolate_);
 }
 
 auto BinaryValue::GetHandle() -> BinaryValueHandle* {
   return &handle_;
 }
 
-void BinaryValue::SavePersistentHandle(v8::Isolate* isolate,
-                                       v8::Local<v8::Value> value) {
-  persistent_handle_ = {new v8::Persistent<v8::Value>(isolate, value),
+void BinaryValue::SavePersistentHandle(v8::Local<v8::Value> value) {
+  persistent_handle_ = {new v8::Persistent<v8::Value>(isolate_, value),
                         isolate_object_deleter_};
 }
 
@@ -295,8 +299,9 @@ void BinaryValue::CreateBackingStoreRef(v8::Local<v8::Value> value) {
 // NOLINTEND(cppcoreguidelines-pro-type-union-access)
 
 BinaryValueFactory::BinaryValueFactory(
+    v8::Isolate* isolate,
     IsolateObjectCollector* isolate_object_collector)
-    : isolate_object_collector_(isolate_object_collector) {}
+    : isolate_(isolate), isolate_object_collector_(isolate_object_collector) {}
 
 auto BinaryValueRegistry::Remember(BinaryValue::Ptr ptr) -> BinaryValueHandle* {
   const std::lock_guard<std::mutex> lock(mutex_);

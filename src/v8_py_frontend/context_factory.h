@@ -18,8 +18,7 @@ namespace MiniRacer {
 class ContextFactory {
  public:
   static void Init(const std::string& v8_flags,
-                   const std::filesystem::path& icu_path,
-                   const std::filesystem::path& snapshot_path);
+                   const std::filesystem::path& icu_path);
 
   static auto Get() -> ContextFactory*;
   auto MakeContext(Callback callback) -> uint64_t;
@@ -29,8 +28,7 @@ class ContextFactory {
 
  private:
   ContextFactory(const std::string& v8_flags,
-                 const std::filesystem::path& icu_path,
-                 const std::filesystem::path& snapshot_path);
+                 const std::filesystem::path& icu_path);
 
   static std::once_flag init_flag_;
   static gsl::owner<ContextFactory*> singleton_;
