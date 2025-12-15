@@ -21,7 +21,7 @@ from py_mini_racer import (
 )
 from tests.gc_check import assert_no_v8_objects
 
-# Wait time for async tests to finish. (Emulated aarch64 tests are surprisingly slow!)
+# Wait time for async tests to finish.
 _ASYNC_COMPLETION_WAIT_SEC = 10
 
 
@@ -195,9 +195,8 @@ def test_timeout() -> None:
         mr.eval("while(1) { }", timeout_sec=timeout)
 
     duration = time() - start_time
-    # Make sure it timed out on time, and allow a giant leeway (because aarch64
-    # emulation tests are surprisingly slow!)
-    assert timeout * 0.9 <= duration <= timeout + 5
+    # Make sure it timed out on time, and allow a large leeway
+    assert timeout * 0.9 <= duration <= timeout + 2
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 
@@ -215,9 +214,8 @@ def test_timeout_ms() -> None:
         mr.eval("while(1) { }", timeout=int(timeout * 1000))
 
     duration = time() - start_time
-    # Make sure it timed out on time, and allow a giant leeway (because aarch64
-    # emulation tests are surprisingly slow!)
-    assert timeout * 0.9 <= duration <= timeout + 5
+    # Make sure it timed out on time, and allow a large leeway
+    assert timeout * 0.9 <= duration <= timeout + 2
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 

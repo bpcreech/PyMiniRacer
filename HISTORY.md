@@ -3,8 +3,13 @@
 ## 0.13.0 (2025-12-07)
 
 - Upgrade to V8 14.3 from 12.6.
-- Switch from Hatch and pre-commit to uv, Justfile, and Prettier.
-- Crank up strictness of ruff and mypy, fixing uncovered issues.
+- Add Windows Arm support!
+- Alpine support is now reduced to using `gcompat` and
+  `LD_PRELOAD="/lib/libgcompat.so.0"`.
+- Crank up strictness of ruff and mypy, fixing uncovered typing issues.
+- Internally: Switch from Hatch and pre-commit to uv, Justfile, and Prettier.
+- Internally: Cross compile for arm (testing on the new native Github runners!) instead
+  of using emulation + sccache. This cuts the build time about 10x!
 
 ## 0.12.4 (2024-06-16)
 

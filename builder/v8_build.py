@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from dataclasses import dataclass
 from functools import cache
 from logging import DEBUG, basicConfig, getLogger
 from os import environ, pathsep
@@ -12,8 +13,6 @@ from shutil import copyfile, rmtree
 from subprocess import check_call
 from sys import executable, platform
 from typing import TYPE_CHECKING
-
-from packaging.tags import platform_tags
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -48,8 +47,7 @@ class UnknownArchError(RuntimeError):
         super().__init__(f"Unknown arch {arch!r}")
 
 
-@cache
-def get_v8_target_cpu() -> str:
+def get_local_v8_target_cpu() -> str:
     m = machine().lower()
     if m in ("arm64", "aarch64"):
         return "arm64"
@@ -88,17 +86,6 @@ def get_data_files_list() -> Sequence[Path]:
         # And obviously, the V8 build itself:
         Path(get_dll_filename()),
     )
-
-
-@cache
-def is_musl() -> bool:
-    # Alpine uses musl for libc, instead of glibc. This breaks many assumptions in the
-    # V8 build, so we have to reconfigure various things when running on musl libc.
-    # Determining if we're on musl (or Alpine) is surprisingly complicated; the best
-    # way seems to be to check the dynamic linker ependencies of the current Python
-    # executable for musl! packaging.tags.platform_tags (which is used by pip et al)
-    # does this for us:
-    return any("musllinux" in t for t in platform_tags())
 
 
 @cache
@@ -171,33 +158,18 @@ def ensure_v8_src(revision: str) -> None:
     gclient_file = get_workspace_path() / ".gclient"
     if not gclient_file.exists():
         get_workspace_path().mkdir(parents=True, exist_ok=True)
-        if is_musl():
-            # Prevent fetching of a useless Debian sysroot on Alpine.
-            # We disable use of the sysroot below (see "use_sysroot"), so this is just
-            # an optimization to preempt the download.
-            # (Note that "musl" is not a valid OS in the depot_tools deps system;
-            # "musl" here is just a placeholder to mean "*not* the thing you think is
-            # called 'linux'".)
-            # Syntax from https://source.chromium.org/chromium/chromium/src/+/main:docs/ios/running_against_tot_webkit.md
-            target_os = """\
-target_os = ["musl"]
-target_os_only = "True"
-"""
-        else:
-            target_os = ""
 
         gclient_file.write_text(
-            f"""\
+            """\
 solutions = [
-  {{ "name"        : "v8",
+  { "name"        : "v8",
     "url"         : "https://chromium.googlesource.com/v8/v8.git",
     "deps_file"   : "DEPS",
     "managed"     : False,
-    "custom_deps" : {{}},
-    "custom_vars": {{}},
-  }},
+    "custom_deps" : {},
+    "custom_vars": {},
+  },
 ]
-{target_os}\
 """,
         )
 
@@ -237,7 +209,7 @@ def apply_patch(name: str) -> None:
         f.write(str(patch_filename) + "\n")
 
 
-def run_build(build_dir: Path) -> None:
+def run_build(build_dir: Path, args: Args) -> None:
     """Run the actual v8 build."""
 
     # As explained in the design principles in ARCHITECTURE.md, we want to reduce the
@@ -252,6 +224,8 @@ def run_build(build_dir: Path) -> None:
     # we reproduce what it does, which for our simple case devolves to just generating
     # args.gn with minimal arguments, and running "gn gen ...".
 
+    target_cpu = args.target_cpu or get_local_v8_target_cpu()
+
     opts = {
         # These following settings are based those found for the "x64.release"
         # configuration. This can be verified by running:
@@ -262,64 +236,24 @@ def run_build(build_dir: Path) -> None:
         "v8_monolithic": "true",
         # From https://groups.google.com/g/v8-users/c/qDJ_XYpig_M/m/qe5XO9PZAwAJ:
         "v8_monolithic_for_shared_library": "true",
-        "target_cpu": f'"{get_v8_target_cpu()}"',
-        "v8_target_cpu": f'"{get_v8_target_cpu()}"',
+        "target_cpu": f'"{target_cpu}"',
+        "v8_target_cpu": f'"{target_cpu}"',
         # We sneak our C++ frontend into V8 as a symlinked "custom_dep" so
         # that we can reuse the V8 build system to make our dynamic link
         # library:
         "v8_custom_deps": '"//custom_deps/mini_racer"',
     }
 
-    if (is_linux() and get_v8_target_cpu() == "arm64") or is_musl():
-        # The V8 build process includes its own clang binary, but not for aarch64 on
-        # Linux glibc, and not for Alpine (musl) at all.
-        # Per tools/dev/gm.py, use the the system clang instead:
-        opts["clang_base_path"] = '"/usr"'
-        if is_musl():
-            opts["clang_version"] = "21"
+    if is_linux() and target_cpu != get_local_v8_target_cpu():
+        run(
+            executable,
+            "build/linux/sysroot_scripts/install-sysroot.py",
+            "--arch=" + target_cpu,
+            cwd=get_v8_path(),
+        )
 
-        # TODO switch v8_workspace/v8/build/config/clang/BUILD.gn to
-        # _dir = "x86_64-alpine-linux-musl"
-        # _suffix = "-x86_64"
-
-        opts["clang_use_chrome_plugins"] = "false"
-        # Because we use a different clang, more warnings pop up. Ignore them:
-        opts["treat_warnings_as_errors"] = "false"
-
-        # TODO probably remove this
-        # # V8 currently uses a clang flag -split-threshold-for-reg-with-hint=0 which
-        # # doen't exist on Alpine's mainline llvm yet. Disable it:
-        # if is_musl():
-        #     apply_patch("split-threshold-for-reg-with-hint.patch")
-
-    if is_musl():
-        # The V8 build unhelpfully sets the clang flag --target=SOMETHING-linux-gnu
-        # on musl. The --target flag is useful when we're cross-compiling (which we're
-        # not) and we aren't, we're actually on what clang calls
-        # x86_64-alpine-linux-musl or aarch64-alpine-linux-musl.
-        # This patch just disables the spurious cflags and ldflags:
-        apply_patch("no-aarch64-linux-gnu-target.patch")
-
-    if is_win() and get_v8_target_cpu() == "arm64":
-        # The V8 build unhelpfully tries to grab the x64 debugging symbols on arm.
-        # Let's turn that off:
-        apply_patch("no-x64-debugger-on-arm-windows.patch")
-
-    if is_musl():
-        # On various OSes, the V8 build process brings in a whole copy of the sysroot
-        # (/usr/include, /usr/lib, etc). Unfortunately on Alpine it tries to use a
-        # Debian sysroot, which doesn't work. Disable it:
-        opts["use_sysroot"] = "false"
-
-        # V8 includes its own libc++ whose headers don't seem to work on Alpine:
-        opts["use_custom_libcxx"] = "false"
-
-        # Same for rust:
-        opts["rust_sysroot_absolute"] = '"/usr"'
-        opts["rustc_version"] = '"1.91.1"'
-        # TODO: Also needs a patch x86_64-alpine-linux-musl in
-        # ./v8_workspace/v8/build/config/rust.gni
-        # Also seems to be mixing libstdc++ and libc++ things and bombing out in clang.
+    if args.no_fortify:
+        apply_patch("no-fortify.patch")
 
     args_text = "\n".join(f"{n}={v}" for n, v in opts.items())
     args_gn = f"""\
@@ -333,33 +267,19 @@ def run_build(build_dir: Path) -> None:
     Path(build_dir / "args.gn").write_text(args_gn, encoding="utf-8")
 
     # Now generate Ninja build files:
-    if is_musl():
-        # depot_tools doesn't include a musl-compatible GN, so use the system one:
-        gn_bin: Sequence[str] = ("/usr/bin/gn",)
-    else:
-        gn_bin = (executable, str(get_depot_tools_path() / "gn.py"))
-
-    run(*gn_bin, "gen", str(build_dir), "--check", cwd=get_v8_path())
+    run(
+        executable,
+        str(get_depot_tools_path() / "gn.py"),
+        "gen",
+        str(build_dir),
+        "--check",
+        cwd=get_v8_path(),
+    )
 
     # Finally, actually do the build:
-    if is_musl():
-        # depot_tools doesn't include a musl-compatible ninja, so use the system one:
-        ninja_bin: Sequence[str] = ("/usr/bin/ninja",)
-    else:
-        ninja_bin = (executable, str(get_depot_tools_path() / "ninja.py"))
-
-    if is_musl():
-        # DIY clang!
-        run(
-            "tools/clang/scripts/build.py",
-            "--without-android",
-            "--without-fuchsia",
-            "--use-system-cmake",
-            cwd=get_v8_path(),
-        )
-
     run(
-        *ninja_bin,
+        executable,
+        str(get_depot_tools_path() / "ninja.py"),
         # "-vv",  # too much spam for GitHub Actions
         "-C",
         str(build_dir),
@@ -368,33 +288,37 @@ def run_build(build_dir: Path) -> None:
     )
 
 
-def build_v8(
-    out_path: Path,
-    *,
-    revision: str | None = None,
-    fetch_only: bool = False,
-    skip_fetch: bool = False,
-) -> None:
-    revision = revision or V8_VERSION
+@dataclass(frozen=True)
+class Args:
+    target_cpu: str | None
+    out_path: Path
+    v8_revision: str
+    fetch_only: bool
+    skip_fetch: bool
+    no_fortify: bool
+
+
+def build_v8(args: Args) -> None:
+    revision = args.v8_revision or V8_VERSION
 
     ensure_depot_tools()
 
-    if not skip_fetch:
+    if not args.skip_fetch:
         ensure_v8_src(revision)
 
-    if fetch_only:
+    if args.fetch_only:
         return
 
     build_dir = get_v8_path() / "out.gn" / "build"
 
-    run_build(build_dir)
+    run_build(build_dir, args)
 
     # Fish out the build artifacts:
-    out_path.mkdir(parents=True, exist_ok=True)
+    args.out_path.mkdir(parents=True, exist_ok=True)
 
     for f in get_data_files_list():
         src = build_dir / f
-        dst = out_path / f
+        dst = args.out_path / f
 
         LOGGER.debug("Copying build artifact %s to %s", src, dst)
         dst.unlink(missing_ok=True)
@@ -412,18 +336,20 @@ def clean_v8(out_path: Path) -> None:
 
 if __name__ == "__main__":
     parser = ArgumentParser()
+    parser.add_argument("--target-cpu", help="v8 target cpu")
     parser.add_argument(
         "--out-path",
-        default=Path("src") / "py_mini_racer",
+        type=Path,
+        default=str(Path("src") / "py_mini_racer"),
         help="Build destination directory",
     )
     parser.add_argument("--v8-revision", default=V8_VERSION)
     parser.add_argument("--fetch-only", action="store_true", help="Only fetch V8")
     parser.add_argument("--skip-fetch", action="store_true", help="Do not fetch V8")
-    args = parser.parse_args()
-    build_v8(
-        out_path=args.out_path,
-        revision=args.v8_revision,
-        fetch_only=args.fetch_only,
-        skip_fetch=args.skip_fetch,
+    parser.add_argument(
+        "--no-fortify",
+        action="store_true",
+        help="Do not fortify the build (useful for Alpine cross-compat)",
     )
+    args = parser.parse_args()
+    build_v8(Args(**vars(args)))

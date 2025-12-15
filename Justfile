@@ -1,20 +1,20 @@
 lint:
     uv lock --check
 
-    uv run --dev mypy .
+    uv run mypy .
 
-    uv run --dev ruff format --check
+    uv run ruff format --check
 
-    uv run --dev ruff check
+    uv run ruff check
 
     npx prettier --check .
 
-    uv run --dev mkdocs build --strict
+    uv run mkdocs build --strict
 
     clang-format --style=Chromium -i src/v8_py_frontend/*.cc src/v8_py_frontend/*.h --dry-run -Werror
 
 clang-tidy:
-    uv run --dev builder/v8_build.py --fetch-only
+    uv run builder/v8_build.py --fetch-only
 
     # Things we're disabling:
     # lvmlibc-* is intended for the llvm project itself
@@ -39,19 +39,19 @@ clang-tidy:
 fix:
     uv lock
 
-    uv run --dev ruff format
+    uv run ruff format
 
     npx prettier --write .
 
     clang-format --style=Chromium -i src/v8_py_frontend/*.cc src/v8_py_frontend/*.h
 
 serve-docs:
-    uv run --dev mkdocs serve
+    uv run mkdocs serve
 
 deploy-docs:
-    uv run --dev mkdocs gh-deploy --force
+    uv run mkdocs gh-deploy --force
 
-build:
+build-dll *args:
     # We build v8 outside of the Python packaging system because it's not
     # linking with the C Python API (so the Python packaging system doesn't
     # provide a lot of value), and the build is very time-consuming and
@@ -59,19 +59,22 @@ build:
     # way of building in a temporary isolated environment every time) very
     # awkward.
     uv sync --no-install-project
-    uv run --no-project builder/v8_build.py
+    uv run --no-project builder/v8_build.py {{args}}
 
+build-wheel:
     uv build
 
+build: build-dll build-wheel
+
 test:
-    uv run --dev pytest tests
+    uv run pytest tests
 
 test-matrix:
-    uv run --dev --python 3.10 pytest tests
-    uv run --dev --python 3.11 pytest tests
-    uv run --dev --python 3.12 pytest tests
-    uv run --dev --python 3.13 pytest tests
-    uv run --dev --python 3.14 pytest tests
+    uv run --python 3.10 pytest tests
+    uv run --python 3.11 pytest tests
+    uv run --python 3.12 pytest tests
+    uv run --python 3.13 pytest tests
+    uv run --python 3.14 pytest tests
 
 git-config-global:
     git config --global core.symlinks true

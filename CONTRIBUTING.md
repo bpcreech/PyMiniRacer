@@ -200,13 +200,6 @@ To make an ordinary release from `main`:
 1. Observe the build process on GitHub Actions. It should build and push docs and upload
    wheels to PyPI automatically.
 
-    !!! warning As of this writing, the `aarch64` Linux builds are slow because they're
-    running on emulation. They time out on the first try (and second and third and...)
-    after 6 hours. If you "restart failed jobs", they will quickly catch up to where
-    where they left off due to [`sccache`](https://github.com/mozilla/sccache). The jobs
-    should _eventually_ complete within the time limit. You can observe their slow
-    progress using the Ninja build status (e.g., `[1645/2312] CXX obj/v8_foo_bar.o`).
-
 ### Hotfix releases
 
 To hotfix a prior release:

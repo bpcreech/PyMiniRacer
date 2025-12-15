@@ -36,28 +36,51 @@ jobs:
         path: dist/*
         if-no-files-found: error
 
-  non-alpine-wheels:
-    name: Build wheel for ${{ matrix.config.os }}
+  build-dll:
+    name: Build dll for ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
         config:
-          - os: windows-2022  # x86_64
-          - os: windows-11-arm
-          - os: ubuntu-24.04  # x86_64
-          - os: ubuntu-24.04-arm
-          - os: macos-15-intel
-          - os: macos-15  # aarch64
+          - name: win-x64_64
+            os: windows-2022
+            target_cpu: x64
+            fortify_arg:
+          - name: win-aarch64
+            os: windows-2022
+            target_cpu: arm64
+            fortify_arg:
+          - name: linux-x64_64
+            os: ubuntu-24.04
+            target_cpu: x64
+            fortify_arg:
+          - name: linux-aarch64
+            os: ubuntu-24.04
+            target_cpu: arm64
+            fortify_arg:
+          - name: macos-x64_64
+            os: macos-15-intel
+            target_cpu: x64
+            fortify_arg:
+          - name: macos-aarch64
+            os: macos-15
+            target_cpu: arm64
+            fortify_arg:
+          - name: linux-x64_64-unfortified
+            os: ubuntu-24.04
+            target_cpu: x64
+            fortify_arg: --no-fortify
+          - name: linux-aarch64-unfortified
+            os: ubuntu-24.04
+            target_cpu: arm64
+            fortify_arg: --no-fortify
 
     steps:
     - uses: extractions/setup-just@v3
-      if: matrix.config.os != 'windows-11-arm'
-
-    - run: choco install just  # no Github cargo action for windows-11-arm yet; use choco:
-      if: matrix.config.os == 'windows-11-arm'
 
     - uses: astral-sh/setup-uv@v7
+
     - uses: actions/checkout@v3
       with:
         # Fetch all tags
@@ -75,55 +98,80 @@ jobs:
       with:
         xcode-version: latest-stable
 
-    - name: Install llvm
-      if: matrix.config.os == 'ubuntu-24.04-arm'
-      run: |
-        # the V8 build runs on clang by default. V8 bundles a working clang for Linux
-        # x86_64 but not aarch64. So we need to bring our own clang and llvm and lld.
-        LLVM_VERSION=22
-        curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-        echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble main" \
-          | sudo tee /etc/apt/sources.list.d/llvm.list
-        sudo apt-get update -q -y
-        PACKAGES="clang-${LLVM_VERSION} llvm-${LLVM_VERSION} lld-${LLVM_VERSION}"
-        sudo apt-get install -q -y ${PACKAGES}
-        # set up non-versioned symlinks to the latest stable clang:
-        for pkg in ${PACKAGES}; do
-          for f in $(dpkg -L "${pkg}" | grep "/usr/bin/.*-${LLVM_VERSION}"); do
-            no_ver="${f%-${LLVM_VERSION}}"
-            sudo rm -f "${no_ver}"
-            sudo ln -s "${f}" "${no_ver}"
-          done
-        done
-        # the v8 build thinks these libs are named not quite like they're named in practice:
-        sudo mkdir "/usr/lib/clang/${LLVM_VERSION}/lib/aarch64-unknown-linux-gnu"
-        for f in /usr/lib/clang/${LLVM_VERSION}/lib/linux/*; do
-          sudo ln -s "$f" $(echo "$f" | sed "s/-aarch64//" | sed "s@/linux/@/aarch64-unknown-linux-gnu/@")
-        done
-
-
-    - run: just build
+    - name: Build dll with v8
+      run: just build-dll "--out-path=_dll" "--target-cpu=${{ matrix.config.target_cpu }}" "${{ matrix.config.fortify_arg }}"
 
     - uses: actions/upload-artifact@v4
       with:
-        name: wheels-${{ matrix.config.os }}
-        path: dist/*
+        name: dll-${{ matrix.config.name }}
+        path: _dll
         if-no-files-found: error
+
+  build-wheel:
+    name: Build and test wheel for ${{ matrix.config.name }}
+    needs: build-dll
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: win-x64_64
+            os: windows-2022
+          - name: win-aarch64
+            os: windows-11-arm
+          - name: linux-x64_64
+            os: ubuntu-24.04
+          - name: linux-aarch64
+            os: ubuntu-24.04-arm
+          - name: macos-x64_64
+            os: macos-15-intel
+          - name: macos-aarch64
+            os: macos-15
+
+    steps:
+    - uses: extractions/setup-just@v3
+      if: matrix.config.os != 'windows-11-arm'
+
+    - run: choco install just  # no Github cargo action for windows-11-arm yet; use choco:
+      if: matrix.config.os == 'windows-11-arm'
+
+    - uses: astral-sh/setup-uv@v7
+
+    - uses: actions/checkout@v3
+      with:
+        # Fetch all tags
+        fetch-depth: 0
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: dll-${{ matrix.config.name }}
+        path: src/py_mini_racer
+
+    - run: just build-wheel
 
     - name: Test wheel
       run: just test-matrix
 
-  alpine-wheels:
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-${{ matrix.config.name }}
+        path: dist/*
+        if-no-files-found: error
+
+  build-alpine-wheel:
     name: Build wheel for Alpine ${{ matrix.config.arch }}
+    needs: build-dll
     runs-on: ${{ matrix.config.image }}
     strategy:
       fail-fast: false
       matrix:
         config:
-          - arch: x86_64
+          - name: alpine-x64_64
             image: ubuntu-22.04
-          - arch: aarch64
+            dll: linux-x64_64-unfortified
+          - name: alpine-aarch64
             image: ubuntu-22.04-arm
+            dll: linux-aarch64-unfortified
 
     container:
       image: alpine
@@ -134,96 +182,69 @@ jobs:
         - /opt:/__e/node20:ro,rshared
 
     steps:
-      # From https://github.com/actions/runner/issues/801?timeline_page=1
-      - name: Allow Linux musl containers on ARM64 runners
-        shell: /bin/sh {0}
-        if: matrix.config.arch == 'aarch64'
-        run: |
-          sed -i "/^ID=/s/alpine/NotpineForGHA/" /etc/os-release
-          apk add nodejs --update-cache
-          mkdir /opt/bin
-          ln -s /usr/bin/node /opt/bin/node
+    # From https://github.com/actions/runner/issues/801?timeline_page=1
+    - name: Allow Linux musl containers on ARM64 runners
+      shell: /bin/sh {0}
+      if: contains(matrix.config.image, 'arm')
+      run: |
+        sed -i "/^ID=/s/alpine/NotpineForGHA/" /etc/os-release
+        apk add nodejs --update-cache
+        mkdir /opt/bin
+        ln -s /usr/bin/node /opt/bin/node
 
-      - name: Install bash
-        shell: /bin/sh {0}
-        run: |
-          apk update
-          apk add bash
+    - name: Install bash
+      shell: /bin/sh {0}
+      run: |
+        apk update
+        apk add bash curl gcompat
 
-      - name: Install deps
-        run: |
-          # Let's download some system packages!
-          # Note that the precise list of packages we need is intertwined not just
-          # with V8, but with builder/build_v8.py, which makes various decisions
-          # about using system versus V8-provided tools and dependencies.
-          PACKAGES=""
-          # First, some basic wheel-building dependencies:
-          PACKAGES="${PACKAGES} python3"
-          PACKAGES="${PACKAGES} py3-pip"
-          PACKAGES="${PACKAGES} py3-virtualenv"
-          # builder/v8_build.py uses git to download depot_tools, and
-          # depot_tools/gclient uses it to grab V8:
-          PACKAGES="${PACKAGES} git"
-          # depot_tools/cipd uses curl to download various things including its own
-          # managed python:
-          PACKAGES="${PACKAGES} curl"
-          # depot_tools/vpython3 runs on bash:
-          PACKAGES="${PACKAGES} bash"
-          # pip needs the following to build some dependencies on the fly on
-          # aarch64:
-          PACKAGES="${PACKAGES} gcc"
-          PACKAGES="${PACKAGES} python3-dev"
-          PACKAGES="${PACKAGES} musl-dev"
-          PACKAGES="${PACKAGES} libffi-dev"
-          # the V8 build system uses gn to generate build files and on Alpine the
-          # one it bundles uses glibc (not musl) and thus does not work:
-          PACKAGES="${PACKAGES} gn"
-          # We need patch to apply patches to V8:
-          PACKAGES="${PACKAGES} patch"
-          # the V8 build system includes a sysroot (/usr/include, /usr/lib, etc) on
-          # many platforms, but not Alpine. Thus we have to provide extra build-time
-          # deps:
-          PACKAGES="${PACKAGES} glib-dev"
-          # the V8 build system has its own libstdc++, but it doesn't seem to work
-          # on Alpine, so we get and use the system one:
-          PACKAGES="${PACKAGES} libc++-dev"
-          # V8 includes its own clang... but not for Alpine:
-          PACKAGES="${PACKAGES} clang"
-          PACKAGES="${PACKAGES} llvm"
-          PACKAGES="${PACKAGES} lld"
-          PACKAGES="${PACKAGES} compiler-rt"
-          apk update
-          apk add ${PACKAGES}
+    - name: Install deps
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
-          curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+    - uses: actions/checkout@v3
+      with:
+        # Fetch all tags
+        fetch-depth: 0
 
-      - uses: actions/checkout@v3
-        with:
-          # Fetch all tags
-          fetch-depth: 0
+    - uses: actions/download-artifact@v4
+      with:
+        name: dll-${{ matrix.config.dll }}
+        path: src/py_mini_racer
 
-      - run: just git-config-global
+    - run: just build-wheel
 
-      - run: just build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-${{ matrix.config.name }}
+        path: dist/*
+        if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.config.os }}
-          path: dist/*
-          if-no-files-found: error
-
-      - name: Test wheel
-        run: just test-matrix
+    - name: Test wheel
+      run: |
+        # We have to use this twisted formulation of sync and then run, splitting
+        # up what uv normally does for us, because the LD_PRELOAD accidentally
+        # confuses uv into thinking we're on a glibc Linux and thus it rejects our
+        # musl wheel.
+        uv sync --python 3.10
+        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.10 pytest tests
+        uv sync --python 3.11
+        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.11 pytest tests
+        uv sync --python 3.12
+        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.12 pytest tests
+        uv sync --python 3.13
+        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.13 pytest tests
+        uv sync --python 3.14
+        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.14 pytest tests
 
   release:
     name: Create GitHub release
     if: startsWith(github.ref, 'refs/heads/release')
     needs:
-    # - container-wheels
-    - non-alpine-wheels
-    - alpine-wheels
+    - build-wheel
+    - build-alpine-wheel
     - sdist
     runs-on: ubuntu-latest
 

@@ -209,15 +209,24 @@ A WASM example is available in the
 
 ## Compatibility
 
-PyMiniRacer is compatible with Python 3.8-3.12 and is based on `ctypes`.
+PyMiniRacer is compatible with Python 3.10-3.14 and is based on `ctypes`.
 
 PyMiniRacer is distributed using [wheels](https://pythonwheels.com/) on
 [PyPI](https://pypi.org/). The wheels are intended to provide compatibility with:
 
-| OS | x86_64 | aarch64 | | ------------------------------- | ------ | ------- | | macOS
-≥ 10.9 | ✓ | ✓ | | Windows ≥ 10 | ✓ | ✖ | | Ubuntu ≥ 20.04 | ✓ | ✓ | | Debian ≥ 11 | ✓ |
-✓ | | RHEL ≥ 9 | ✓ | ✓ | | other Linuxes with glibc ≥ 2.31 | ✓ | ✓ | | Alpine ≥ 3.19 | ✓
-| ✓ | | other Linux with musl ≥ 1.2 | ✓ | ✓ |
+| OS                              | x86_64 | aarch64 |
+| ------------------------------- | ------ | ------- |
+| macOS ≥ 10.9                    | ✓      | ✓       |
+| Windows ≥ 10                    | ✓      | ✓       |
+| Ubuntu ≥ 20.04                  | ✓      | ✓       |
+| Debian ≥ 11                     | ✓      | ✓       |
+| RHEL ≥ 9                        | ✓      | ✓       |
+| other Linuxes with glibc ≥ 2.31 | ✓      | ✓       |
+| Alpine ≥ 3.19                   | ✓      | ✓       |
+| other Linux with musl ≥ 1.2     | ✓      | ✓       |
+
+In order to run on Alpine you must install `gcompat` and run with
+`LD_PRELOAD="/lib/libgcompat.so.0"`.
 
 If you have a up-to-date pip and it doesn't use a wheel, you might have an environment
 for which no wheel is built. Please open an issue.

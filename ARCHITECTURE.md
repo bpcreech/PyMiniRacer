@@ -168,19 +168,17 @@ PyMiniRacer!) which wants to integrate V8 must first build it.
 ### Build PyPI wheels
 
 Because V8 takes so long to build (about 2-3 hours at present on the free GitHub Actions
-runners, and >12 hours when emulating `aarch64` on them), we want to build wheels for
-PyPI. We don't want folks to have to build V8 when they `pip install mini-racer`!
+runners), we want to build wheels for PyPI. We don't want folks to have to build V8 when
+they `pip install mini-racer`!
 
 We build wheels for many operating systems and architectures based on popular demand via
 GitHib issues. Currently the list is
-`{x86_64, aarch64} × {Debian Linux, Alpine Linux, Mac, Windows}` (but skipping Windows
-`aarch64` for now since there is not yet either a GitHub Actions runner, or emulation
-layer for it).
+`{x86_64, aarch64} × {Debian Linux, Alpine Linux, Mac, Windows}`.
 
 ### Use the free GitHub Actions hosted runners
 
 PyMiniRacer is not a funded project, so we run on the free GitHub Actions hosted
-runners. These currently let us build for many key platforms (including via emulation).
+runners. These currently let us build for many key platforms.
 
 This also lets contributors easily run the same build automation by simply forking the
 PyMiniRacer repo and running the workflows (for free!) within their own forks.
@@ -204,15 +202,6 @@ access it.
 Consequently, `libmini_racer.so` isn't specific to Python, and the code barely mentions
 Python. One could in theory use it from any other language which knows how to call C
 APIs, such as Java, Go, C#, ... or just C. No one does so as of this writing.
-
-### Use `uraimo/run-on-arch-action`
-
-So, we need to build wheels for multiple architectures. For Windows and Mac (`x86_64` on
-Windows, and both `x86_64` and `aarch64` on Mac) we can can use GitHub hosted runners
-as-is. For Linux builds (Debian and Alpine, and `x86_64` and `aarch64`), we use the
-fantastic GitHub Action workflow step
-[`uraimo/run-on-arch-action`](https://github.com/uraimo/run-on-arch-action), which lets
-us build a docker container on the fly and run it on QEMU.
 
 ### Don't use `cibuildwheel`
 
@@ -250,25 +239,31 @@ multi-architecture build workflow for V8, _ahead of_ the `cibuildwheel` step. So
 `cibuildwheel` could potentially simplify the actual wheel distribution for us, but it
 wouldn't simplify the overall workflow management.
 
-### Use `sccache` to patch around build timeouts
+### Build with cross-compile for aarch64 on Linux and Windows
 
-As of this writing, the Linux `aarch64` builds run on emulation becaues GitHub Actions
-has no free hosted `aarch64` runners for Linux. This makes them so slow, they struggle
-to complete at all. They take about 24 hours to run. The GitHub Actions
-[job timeout is only 6 hours](https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits),
-so we have to restart the jobs multiple times. We rely on
-[`sccache`](https://github.com/mozilla/sccache) to catch the build up to prior progress.
+Trial and error indicates the V8 build process is simply not geared to be run on an
+actual Linux or Windows Arm machine. Various parts of the build system keep trying to
+run x86_64 tools (like a pre-built clang or rustc). On the other hand, cross-compiling
+works very well out of the box, so we do that!
 
-It would in theory be less ugly to segment the build into small interlinked jobs of less
-than 6 hours each so they each succeed, but for now it's simpler to just manually
-restart the failed jobs, each time loading from the build cache and making progress,
-until they finally succeed. Hopefully at some point GitHub will provide native `aarch64`
-Linux runners, which will alleviate this problem.
+This doesn't apply on MacOS which has good native MacOS support on Arm, since that's
+obviously what many or most developers are using.
 
-Hopefully,
-[per this GitHub community discussion thread](https://github.com/orgs/community/discussions/19197),
-we will get a free Linux `aarch64` runner in 2024 and can dispense with
-cross-architecture emulation.
+### Build for Alpine as a cross-compatible glibc binary
+
+Prior versions of PyMiniRacer build V8 natively on Alpine, using a series of hacks and
+patches.
+
+This seems to be hopeless today; there are just too many parts of the V8 build which are
+incompatible with Alpine (and assume that "Linux" means "glibc"). Both the clang and
+rustc configuration systems are hard-wired in many ways that preclude operation on
+Alpine without extensive patching (or just dispensing with the V8 build system
+entirely!).
+
+So instead we build a cross-compatible binary on Ubuntu with glibc disabling the
+`_FORTIFY_SOURCE` to generate a binary that is compatible with the Alpine `gcompat`
+package. To use the resulting wheel, you must `apk add gcompat` and add the environment
+variable `LD_PRELOAD="/lib/libgcompat.so.0"`.
 
 ### Build V8 _with_ our frontend (`v8_py_frontend`) as a snuck-in component
 
