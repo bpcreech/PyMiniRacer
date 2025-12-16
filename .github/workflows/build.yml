@@ -46,35 +46,21 @@ jobs:
           - name: win-x64_64
             os: windows-2022
             target_cpu: x64
-            fortify_arg:
           - name: win-aarch64
             os: windows-2022
             target_cpu: arm64
-            fortify_arg:
           - name: linux-x64_64
             os: ubuntu-24.04
             target_cpu: x64
-            fortify_arg:
           - name: linux-aarch64
             os: ubuntu-24.04
             target_cpu: arm64
-            fortify_arg:
           - name: macos-x64_64
             os: macos-15-intel
             target_cpu: x64
-            fortify_arg:
           - name: macos-aarch64
             os: macos-15
             target_cpu: arm64
-            fortify_arg:
-          - name: linux-x64_64-unfortified
-            os: ubuntu-24.04
-            target_cpu: x64
-            fortify_arg: --no-fortify
-          - name: linux-aarch64-unfortified
-            os: ubuntu-24.04
-            target_cpu: arm64
-            fortify_arg: --no-fortify
 
     steps:
     - uses: extractions/setup-just@v3
@@ -99,7 +85,7 @@ jobs:
         xcode-version: latest-stable
 
     - name: Build dll with v8
-      run: just build-dll "--out-path=_dll" "--target-cpu=${{ matrix.config.target_cpu }}" "${{ matrix.config.fortify_arg }}"
+      run: just build-dll "--out-path=_dll" "--target-cpu=${{ matrix.config.target_cpu }}"
 
     - uses: actions/upload-artifact@v4
       with:
@@ -159,7 +145,7 @@ jobs:
         if-no-files-found: error
 
   build-alpine-wheel:
-    name: Build wheel for Alpine ${{ matrix.config.arch }}
+    name: Build wheel for ${{ matrix.config.name }}
     needs: build-dll
     runs-on: ${{ matrix.config.image }}
     strategy:
@@ -168,10 +154,10 @@ jobs:
         config:
           - name: alpine-x64_64
             image: ubuntu-22.04
-            dll: linux-x64_64-unfortified
+            dll: linux-x64_64
           - name: alpine-aarch64
             image: ubuntu-22.04-arm
-            dll: linux-aarch64-unfortified
+            dll: linux-aarch64
 
     container:
       image: alpine
@@ -192,14 +178,12 @@ jobs:
         mkdir /opt/bin
         ln -s /usr/bin/node /opt/bin/node
 
-    - name: Install bash
+    - name: Install deps
       shell: /bin/sh {0}
       run: |
         apk update
-        apk add bash curl gcompat
+        apk add bash curl gcompat libgcc
 
-    - name: Install deps
-      run: |
         curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin

@@ -260,10 +260,9 @@ rustc configuration systems are hard-wired in many ways that preclude operation 
 Alpine without extensive patching (or just dispensing with the V8 build system
 entirely!).
 
-So instead we build a cross-compatible binary on Ubuntu with glibc disabling the
-`_FORTIFY_SOURCE` to generate a binary that is compatible with the Alpine `gcompat`
-package. To use the resulting wheel, you must `apk add gcompat` and add the environment
-variable `LD_PRELOAD="/lib/libgcompat.so.0"`.
+So instead we build a on Ubuntu with glibc and then put that into a wheel on Alpine. To
+use the resulting wheel, you must `apk add gcompat` and add the environment variable
+`LD_PRELOAD="/lib/libgcompat.so.0"`.
 
 ### Build V8 _with_ our frontend (`v8_py_frontend`) as a snuck-in component
 
