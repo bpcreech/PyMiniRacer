@@ -1,9 +1,13 @@
 """Test .eval() method"""
 
+from __future__ import annotations
+
 from asyncio import run as asyncio_run
 from time import sleep, time
+from typing import cast
 
 import pytest
+
 from py_mini_racer import (
     JSEvalException,
     JSOOMException,
@@ -15,9 +19,13 @@ from py_mini_racer import (
     JSUndefined,
     MiniRacer,
 )
+from tests.gc_check import assert_no_v8_objects
+
+# Wait time for async tests to finish.
+_ASYNC_COMPLETION_WAIT_SEC = 10
 
 
-def test_invalid(gc_check):
+def test_invalid() -> None:
     mr = MiniRacer()
 
     with pytest.raises(JSEvalException) as exc_info:
@@ -36,45 +44,45 @@ ReferenceError: invalid is not defined
     )
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_eval(gc_check):
+def test_eval() -> None:
     mr = MiniRacer()
-    assert mr.eval("42") == 42
+    assert mr.eval("42") == 42  # noqa: PLR2004
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_blank(gc_check):
+def test_blank() -> None:
     mr = MiniRacer()
     assert mr.eval("") is JSUndefined
     assert mr.eval(" ") is JSUndefined
     assert mr.eval("\t") is JSUndefined
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_global(gc_check):
+def test_global() -> None:
     mr = MiniRacer()
     mr.eval("var xabc = 22;")
-    assert mr.eval("xabc") == 22
+    assert mr.eval("xabc") == 22  # noqa: PLR2004
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_fun(gc_check):
+def test_fun() -> None:
     mr = MiniRacer()
     mr.eval("var x = function(y) {return y+1;}")
 
-    assert mr.eval("x(1)") == 2
-    assert mr.eval("x(10)") == 11
-    assert mr.eval("x(100)") == 101
+    assert mr.eval("x(1)") == 2  # noqa: PLR2004
+    assert mr.eval("x(10)") == 11  # noqa: PLR2004
+    assert mr.eval("x(100)") == 101  # noqa: PLR2004
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_multiple_ctx(gc_check):
+def test_multiple_ctx() -> None:
     c1 = MiniRacer()
     c2 = MiniRacer()
     c3 = MiniRacer()
@@ -83,15 +91,15 @@ def test_multiple_ctx(gc_check):
     c2.eval("var x = 2")
     c3.eval("var x = 3")
     assert c1.eval("(x)") == 1
-    assert c2.eval("(x)") == 2
-    assert c3.eval("(x)") == 3
+    assert c2.eval("(x)") == 2  # noqa: PLR2004
+    assert c3.eval("(x)") == 3  # noqa: PLR2004
 
-    gc_check.check(c1)
-    gc_check.check(c2)
-    gc_check.check(c3)
+    assert_no_v8_objects(c1)
+    assert_no_v8_objects(c2)
+    assert_no_v8_objects(c3)
 
 
-def test_exception_thrown(gc_check):
+def test_exception_thrown() -> None:
     mr = MiniRacer()
 
     js_source = "var f = function() {throw new Error('blah')};"
@@ -115,10 +123,10 @@ Error: blah
     )
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_string_thrown(gc_check):
+def test_string_thrown() -> None:
     mr = MiniRacer()
 
     js_source = "var f = function() {throw 'blah'};"
@@ -140,10 +148,10 @@ var f = function() {throw 'blah'};
     )
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_cannot_parse(gc_check):
+def test_cannot_parse() -> None:
     mr = MiniRacer()
     js_source = "var f = function("
 
@@ -162,10 +170,10 @@ SyntaxError: Unexpected end of input
     )
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_null_byte(gc_check):
+def test_null_byte() -> None:
     mr = MiniRacer()
 
     s = "\x00 my string!"
@@ -175,11 +183,11 @@ def test_null_byte(gc_check):
     result = mr.eval(in_val)
     assert result == s
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_timeout(gc_check):
-    timeout = 0.1
+def test_timeout() -> None:
+    timeout = 0.3
     start_time = time()
 
     mr = MiniRacer()
@@ -187,19 +195,18 @@ def test_timeout(gc_check):
         mr.eval("while(1) { }", timeout_sec=timeout)
 
     duration = time() - start_time
-    # Make sure it timed out on time, and allow a giant leeway (because aarch64
-    # emulation tests are surprisingly slow!)
-    assert timeout <= duration <= timeout + 5
+    # Make sure it timed out on time, and allow a large leeway
+    assert timeout * 0.9 <= duration <= timeout + 2
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_timeout_ms(gc_check):
+def test_timeout_ms() -> None:
     # Same as above but with the deprecated timeout millisecond argument
-    timeout = 0.1
+    timeout = 0.3
     start_time = time()
 
     mr = MiniRacer()
@@ -207,17 +214,16 @@ def test_timeout_ms(gc_check):
         mr.eval("while(1) { }", timeout=int(timeout * 1000))
 
     duration = time() - start_time
-    # Make sure it timed out on time, and allow a giant leeway (because aarch64
-    # emulation tests are surprisingly slow!)
-    assert timeout <= duration <= timeout + 5
+    # Make sure it timed out on time, and allow a large leeway
+    assert timeout * 0.9 <= duration <= timeout + 2
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_max_memory_soft(gc_check):
+def test_max_memory_soft() -> None:
     mr = MiniRacer()
     mr.set_soft_memory_limit(100000000)
     mr.set_hard_memory_limit(100000000)
@@ -233,7 +239,7 @@ while(true) {
     n.fill(0);
     a = a.concat(n);
 }
-"""
+""",
         )
 
     assert mr.was_soft_memory_limit_reached()
@@ -241,10 +247,10 @@ while(true) {
     assert exc_info.value.args[0] == "JavaScript memory limit reached"
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_max_memory_hard(gc_check):
+def test_max_memory_hard() -> None:
     mr = MiniRacer()
     mr.set_hard_memory_limit(100000000)
     with pytest.raises(JSOOMException) as exc_info:
@@ -258,7 +264,7 @@ while(true) {
     let n = new Array(Math.floor(s));
     n.fill(0);
     a = a.concat(n);
-}"""
+}""",
         )
 
     assert not mr.was_soft_memory_limit_reached()
@@ -266,10 +272,10 @@ while(true) {
     assert exc_info.value.args[0] == "JavaScript memory limit reached"
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_max_memory_hard_eval_arg(gc_check):
+def test_max_memory_hard_eval_arg() -> None:
     # Same as above but passing the argument into the eval method (which is a
     # deprecated thing to do because the parameter is really affine to the
     # MiniRacer object)
@@ -292,19 +298,19 @@ while(true) {
     assert exc_info.value.args[0] == "JavaScript memory limit reached"
 
     del exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_symbol(gc_check):
+def test_symbol() -> None:
     mr = MiniRacer()
     res = mr.eval("Symbol.toPrimitive")
     assert isinstance(res, JSSymbol)
 
     del res
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_microtask(gc_check):
+def test_microtask() -> None:
     # PyMiniRacer uses V8 microtasks (things, like certain promise callbacks, which run
     # immediately after an evaluation ends).
     # By default, V8 runs any microtasks before it returns control to PyMiniRacer.
@@ -322,14 +328,14 @@ var done = false;
 p.then(() => {done = true});
 
 done
-"""
+""",
     )
     assert mr.eval("done")
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_longer_microtask(gc_check):
+def test_longer_microtask() -> None:
     # Verifies a bug fix wherein failure to set a v8::Isolate::Scope on the message
     # pump thread would otherwise result in a segmentation fault:
     mr = MiniRacer()
@@ -342,39 +348,37 @@ async function foo() {
     done = true;
 }
 foo();
-"""
+""",
     )
 
     assert not mr.eval("done")
     start = time()
-    while time() - start < 10 and not mr.eval("done"):
+    while time() - start < _ASYNC_COMPLETION_WAIT_SEC and not mr.eval("done"):
         sleep(0.1)
     assert mr.eval("done")
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_polling(gc_check):
+def test_polling() -> None:
     mr = MiniRacer()
     assert not mr.eval(
         """
 var done = false;
 setTimeout(() => { done = true; }, 1000);
 done
-"""
+""",
     )
     assert not mr.eval("done")
     start = time()
-    # Give the 1-second wait 10 seconds to finish. (Emulated aarch64 tests are
-    # surprisingly slow!)
-    while time() - start < 10 and not mr.eval("done"):
+    while time() - start < _ASYNC_COMPLETION_WAIT_SEC and not mr.eval("done"):
         sleep(0.1)
     assert mr.eval("done")
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_settimeout(gc_check):
+def test_settimeout() -> None:
     mr = MiniRacer()
     mr.eval(
         """
@@ -384,85 +388,91 @@ let b = setTimeout(() => { results.push("b"); }, 3000);
 let c = setTimeout(() => { results.push("c"); }, 1000);
 let d = setTimeout(() => { results.push("d"); }, 4000);
 clearTimeout(b)
-"""
+""",
     )
     start = time()
-    # Give the 1-second wait 10 seconds to finish. (Emulated aarch64 tests are
-    # surprisingly slow!)
-    while time() - start < 10 and mr.eval("results.length") != 3:
+    while (
+        time() - start < _ASYNC_COMPLETION_WAIT_SEC and mr.eval("results.length") != 3  # noqa: PLR2004
+    ):
         sleep(0.1)
-    assert mr.eval("results.length") == 3
+    assert mr.eval("results.length") == 3  # noqa: PLR2004
     assert mr.eval("results[0]") == "c"
     assert mr.eval("results[1]") == "a"
     assert mr.eval("results[2]") == "d"
 
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_promise_sync(gc_check):
+def test_promise_sync() -> None:
     mr = MiniRacer()
-    promise = mr.eval(
-        """
-new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
-"""
-    )
-    assert isinstance(promise, JSPromise)
-    start = time()
-    # Give the 1-second wait 10 seconds to finish. (Emulated aarch64 tests are
-    # surprisingly slow!)
-    result = promise.get(timeout=10)
-    assert time() - start > 0.5
-    assert result == 42
-
-    del promise
-    gc_check.check(mr)
-
-
-def test_promise_async(gc_check):
-    mr = MiniRacer()
-
-    async def run_test():
-        promise = mr.eval(
+    p = cast(
+        "JSPromise",
+        mr.eval(
             """
 new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
-"""
+""",
+        ),
+    )
+    start = time()
+    result = p.get(timeout=10)
+    assert time() - start > 0.5  # noqa: PLR2004
+    assert result == 42  # noqa: PLR2004
+
+    del p
+    assert_no_v8_objects(mr)
+
+
+def test_promise_async() -> None:
+    mr = MiniRacer()
+
+    async def run_test() -> None:
+        p = cast(
+            "JSPromise",
+            mr.eval(
+                """
+new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
+""",
+            ),
         )
-        assert isinstance(promise, JSPromise)
         start = time()
-        result = await promise
-        assert time() - start > 0.5
-        # Give the 1-second wait 10 seconds to finish. (Emulated aarch64 tests are
-        # surprisingly slow!)
-        assert time() - start < 10
-        assert result == 42
+        result = await p
+        assert time() - start > 0.5  # noqa: PLR2004
+        assert time() - start < _ASYNC_COMPLETION_WAIT_SEC
+        assert result == 42  # noqa: PLR2004
 
     asyncio_run(run_test())
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_resolved_promise_sync(gc_check):
+def test_resolved_promise_sync() -> None:
     mr = MiniRacer()
-    val = mr.eval("Promise.resolve(6*7)").get()
-    assert val == 42
+    p = cast("JSPromise", mr.eval("Promise.resolve(6*7)"))
+    val = p.get()
+    assert val == 42  # noqa: PLR2004
 
-    gc_check.check(mr)
+    del val, p
+
+    assert_no_v8_objects(mr)
 
 
-def test_resolved_promise_async(gc_check):
+def test_resolved_promise_async() -> None:
     mr = MiniRacer()
 
-    async def run_test():
-        val = await mr.eval("Promise.resolve(6*7)")
-        assert val == 42
+    async def run_test() -> None:
+        p = cast("JSPromise", mr.eval("Promise.resolve(6*7)"))
+        val = await p
+        assert val == 42  # noqa: PLR2004
 
     asyncio_run(run_test())
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_rejected_promise_sync(gc_check):
+def test_rejected_promise_sync() -> None:
     mr = MiniRacer()
+
+    p = cast("JSPromise", mr.eval("Promise.reject(new Error('this is an error'))"))
     with pytest.raises(JSPromiseError) as exc_info:
-        mr.eval("Promise.reject(new Error('this is an error'))").get()
+        p.get()
 
     assert (
         exc_info.value.args[0]
@@ -472,16 +482,17 @@ JavaScript rejected promise with reason: Error: this is an error
 """
     )
 
-    del exc_info
-    gc_check.check(mr)
+    del exc_info, p
+    assert_no_v8_objects(mr)
 
 
-def test_rejected_promise_async(gc_check):
+def test_rejected_promise_async() -> None:
     mr = MiniRacer()
 
-    async def run_test():
+    async def run_test() -> None:
+        p = cast("JSPromise", mr.eval("Promise.reject(new Error('this is an error'))"))
         with pytest.raises(JSPromiseError) as exc_info:
-            await mr.eval("Promise.reject(new Error('this is an error'))")
+            await p
 
         assert (
             exc_info.value.args[0]
@@ -492,13 +503,15 @@ JavaScript rejected promise with reason: Error: this is an error
         )
 
     asyncio_run(run_test())
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_rejected_promise_sync_stringerror(gc_check):
+def test_rejected_promise_sync_stringerror() -> None:
     mr = MiniRacer()
+
+    p = cast("JSPromise", mr.eval("Promise.reject('this is a string')"))
     with pytest.raises(JSPromiseError) as exc_info:
-        mr.eval("Promise.reject('this is a string')").get()
+        p.get()
 
     assert (
         exc_info.value.args[0]
@@ -507,5 +520,5 @@ JavaScript rejected promise with reason: this is a string
 """
     )
 
-    del exc_info
-    gc_check.check(mr)
+    del exc_info, p
+    assert_no_v8_objects(mr)

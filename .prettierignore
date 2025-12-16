@@ -1,0 +1,8 @@
+.*
+v8_workspace
+**/*.c
+**/*.h
+**/*.py
+uv.lock
+package-lock.json
+tests/fixtures/babel.js

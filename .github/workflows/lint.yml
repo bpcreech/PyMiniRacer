@@ -1,0 +1,27 @@
+name: Lint checks
+
+on: [pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: extractions/setup-just@v3
+    - uses: astral-sh/setup-uv@v7
+    # For clang-tidy and clang-format, let's lint and format with the same release
+    # of LLVM that we compile with:
+    - name: Install up-to-date LLVM
+      run: |
+        LLVM_VERSION=18
+        UBUNTU_VERSION=jammy
+        curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        echo "deb http://apt.llvm.org/${UBUNTU_VERSION}/ llvm-toolchain-${UBUNTU_VERSION}-${LLVM_VERSION} main" \
+                | sudo tee /etc/apt/sources.list.d/llvm.list
+        sudo apt-get update -q -y
+        sudo apt-get install -q -y "clang-format-${LLVM_VERSION}" "clang-tidy-${LLVM_VERSION}"
+        sudo ln -sf "/usr/bin/clang-format-${LLVM_VERSION}" /usr/bin/clang-format
+        sudo ln -sf "/usr/bin/clang-tidy-${LLVM_VERSION}" /usr/bin/clang-tidy
+
+    - run: just lint
+    - run: just clang-tidy

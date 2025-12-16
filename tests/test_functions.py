@@ -1,21 +1,32 @@
 """Tests JSFunctions"""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
 import pytest
+
 from py_mini_racer import (
     JSEvalException,
     JSTimeoutException,
     MiniRacer,
 )
+from tests.gc_check import assert_no_v8_objects
+
+if TYPE_CHECKING:
+    from py_mini_racer import JSArray, JSFunction, JSMappedObject
 
 
-def test_function(gc_check):
+def test_function() -> None:
     mr = MiniRacer()
-    func = mr.eval("(a) => a")
-    assert func(42) == 42
+    func = cast("JSFunction", mr.eval("(a) => a"))
+    assert func(42) == 42  # noqa: PLR2004
     arr = mr.eval("[41, 42]")
-    assert list(func(arr)) == list(func(arr))
-    thing = mr.eval(
-        """\
+    assert list(cast("JSArray", func(arr))) == [41, 42]
+    thing = cast(
+        "JSMappedObject",
+        mr.eval(
+            """\
 class Thing {
     constructor(a) {
         this.blob = a;
@@ -26,24 +37,28 @@ class Thing {
     }
 }
 new Thing('start');
-"""
+""",
+        ),
     )
-    stuff = thing["stuff"]
+    stuff = cast("JSFunction", thing["stuff"])
     assert stuff("end", this=thing) == "startend"
 
     del func, arr, thing, stuff
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_exceptions(gc_check):
+def test_exceptions() -> None:
     mr = MiniRacer()
-    func = mr.eval(
-        """\
+    func = cast(
+        "JSFunction",
+        mr.eval(
+            """\
 function func(a, b, c) {
     throw new Error('asdf');
 }
 func
-"""
+""",
+        ),
     )
 
     with pytest.raises(JSEvalException) as exc_info:
@@ -62,16 +77,17 @@ Error: asdf
     )
 
     del func, exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)
 
 
-def test_timeout(gc_check):
+def test_timeout() -> None:
     mr = MiniRacer()
-    func = mr.eval("() => { while(1) { } }")
+
+    func = cast("JSFunction", mr.eval("() => { while(1) { } }"))
     with pytest.raises(JSTimeoutException) as exc_info:
         func(timeout_sec=1)
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 
     del func, exc_info
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)

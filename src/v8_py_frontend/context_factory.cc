@@ -17,10 +17,9 @@ gsl::owner<ContextFactory*> ContextFactory::singleton_ = nullptr;
 std::once_flag ContextFactory::init_flag_;
 
 void ContextFactory::Init(const std::string& v8_flags,
-                          const std::filesystem::path& icu_path,
-                          const std::filesystem::path& snapshot_path) {
-  std::call_once(init_flag_, [v8_flags, icu_path, snapshot_path] {
-    singleton_ = new ContextFactory(v8_flags, icu_path, snapshot_path);
+                          const std::filesystem::path& icu_path) {
+  std::call_once(init_flag_, [v8_flags, icu_path] {
+    singleton_ = new ContextFactory(v8_flags, icu_path);
   });
 }
 
@@ -51,10 +50,8 @@ auto ContextFactory::Count() -> size_t {
 }
 
 ContextFactory::ContextFactory(const std::string& v8_flags,
-                               const std::filesystem::path& icu_path,
-                               const std::filesystem::path& snapshot_path) {
+                               const std::filesystem::path& icu_path) {
   v8::V8::InitializeICU(icu_path.string().c_str());
-  v8::V8::InitializeExternalStartupDataFromFile(snapshot_path.string().c_str());
 
   if (!v8_flags.empty()) {
     v8::V8::SetFlagsFromString(v8_flags.c_str());

@@ -36,10 +36,8 @@ LIB_EXPORT auto mr_eval(uint64_t context_id,
   return context->Eval(code_handle, callback_id);
 }
 
-LIB_EXPORT void mr_init_v8(const char* v8_flags,
-                           const char* icu_path,
-                           const char* snapshot_path) {
-  MiniRacer::ContextFactory::Init(v8_flags, icu_path, snapshot_path);
+LIB_EXPORT void mr_init_v8(const char* v8_flags, const char* icu_path) {
+  MiniRacer::ContextFactory::Init(v8_flags, icu_path);
 }
 
 LIB_EXPORT auto mr_init_context(MiniRacer::Callback callback) -> uint64_t {

@@ -25,7 +25,7 @@ Context::Context(v8::Platform* platform, Callback callback)
     : isolate_manager_(platform),
       isolate_object_collector_(&isolate_manager_),
       isolate_memory_monitor_(&isolate_manager_),
-      bv_factory_(&isolate_object_collector_),
+      bv_factory_(isolate_manager_.Get(), &isolate_object_collector_),
       callback_([this, callback](uint64_t callback_id, BinaryValue::Ptr val) {
         callback(callback_id, bv_registry_.Remember(std::move(val)));
       }),

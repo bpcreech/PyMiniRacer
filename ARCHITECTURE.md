@@ -5,11 +5,11 @@ This document contains some notes about the design of PyMiniRacer.
 ## Security goals
 
 **First and foremost, PyMiniRacer makes no guarantees or warrantees, as noted in the
-license.** This section documents the security *goals* of PyMiniRacer. Anything that
+license.** This section documents the security _goals_ of PyMiniRacer. Anything that
 doesn't meet these goals should be considered to be a bug (but with no warrantee or even
 a guaranteed path to remediation).
 
-### PyMiniRacer should *be able to* run untrusted JavaScript code
+### PyMiniRacer should _be able to_ run untrusted JavaScript code
 
 The ability for PyMiniRacer to run untrusted JavaScript code
 [was an original design goal for Sqreen](https://news.ycombinator.com/item?id=39754885#39813985)
@@ -18,31 +18,30 @@ in developing PyMiniRacer, and continues to be a design goal today.
 To that end, PyMiniRacer provides:
 
 1. The innate sandboxing properties of V8. V8 is trusted by billions of folks to run
-    untrusted JavaScript every day, as a part of Chrome and other web browsers. It has
-    many features like the [security sandbox](https://v8.dev/blog/sandbox) and
-    undergoes close security scrutiny.
+   untrusted JavaScript every day, as a part of Chrome and other web browsers. It has
+   many features like the [security sandbox](https://v8.dev/blog/sandbox) and undergoes
+   close security scrutiny.
 
 1. The ability to create multiple `MiniRacer` instances which each have separate V8
-    isolates, to separate different blobs of untrusted code from each other.
+   isolates, to separate different blobs of untrusted code from each other.
 
 1. Optional timeouts and memory constraints on code being executed.
 
 Caveats:
 
 1. The continual security research is V8 under yields a corresponding
-    [stream of vulnerability reports](https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=v8).
-    
+   [stream of vulnerability reports](https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=v8).
 
-1. ... and while V8 *as embedded in a web browser* will typically receive (funded!)
-    updates to correct those vulnerabilities, PyMiniRacer is unlikely to see as
-    aggressive and consistent an update schedule.
+1. ... and while V8 _as embedded in a web browser_ will typically receive (funded!)
+   updates to correct those vulnerabilities, PyMiniRacer is unlikely to see as
+   aggressive and consistent an update schedule.
 
 1. ... and of course PyMiniRacer itself may have vulnerabilities.
-    [This has happened before](https://nvd.nist.gov/vuln/detail/CVE-2020-25489).
+   [This has happened before](https://nvd.nist.gov/vuln/detail/CVE-2020-25489).
 
 1. ... and even if PyMiniRacer is updated to accomodate a vulnerability fix in itself or
-    V8, it is incumbent upon Python applications which integrate it to actually
-    redeploy with the new PyMiniRacer version.
+   V8, it is incumbent upon Python applications which integrate it to actually redeploy
+   with the new PyMiniRacer version.
 
 If running potentially adversarial JavaScript code in a high-security environment, it
 might be a better choice to run code using a purpose-built isolation environment such as
@@ -51,10 +50,10 @@ containers on [gVisor](https://gvisor.dev/), than to rely on PyMiniRacer for iso
 ### JavaScript-to-Python callbacks may breach any isolation boundary
 
 The `MiniRacer.wrap_py_function` method allows PyMiniRacer users to expose Python
-functions *they write* to JavaScript. This creates an extension framework which
+functions _they write_ to JavaScript. This creates an extension framework which
 essentially breaches the isolation boundary provided by V8.
 
-This feature should only be used if the underlying JavaScript code *is* trusted, or if
+This feature should only be used if the underlying JavaScript code _is_ trusted, or if
 the author is certain the exposed Python function is safe for calls from untrusted code.
 (I.e., if you expose a Python function which allows reading arbitrary files from disk,
 this would obviously be bad if the JavaScript code which may call it is itself
@@ -68,14 +67,27 @@ This is the [`mkdocs` ](https://www.mkdocs.org/) site for PyMiniRacer. To maximi
 compatibility with standard open-source repository layout, this directory is just a
 bunch of stubs which include files from the package root.
 
-### `hatch_build.py`
+### `Justfile`
 
-This is a Hatch build hook which builds Python wheels, by calling `helpers/v8_build.py`.
+This is the main control board for PyMiniRacer dev work, for manual operations and
+GitHub Actions alike.
 
-### `helpers/v8_build.py`
+### `setup.py`
+
+This is a custom distutils setup script, required to:
+
+1. Set a custom architecture tag for the wheel (indicating the build is arch-dependent
+   but not specific to a Python version), and
+2. Generate a readme!
+
+We leave the v8 build out of the Python setuptools system because it's slow and fragile
+and actually unrelated to Python, and thus ill-served by the wrapping provided by Python
+setuptools and uv.
+
+### `builder/v8_build.py`
 
 This is the PyMiniRacer V8 build wrapper. Building V8 for many platforms (Windows, Mac,
-glibc Linux, musl Linux) *and* architectures (x86_64, aarch64) is hard, especially since
+glibc Linux, musl Linux) _and_ architectures (x86_64, aarch64) is hard, especially since
 V8 is primarily intended to be built by Google engineers on a somewhat different set of
 of platforms (i.e., those Chrome runs on), and typically via cross-compiled from
 relatively curated build hosts. So this file is complicated and full of `if` statements.
@@ -87,12 +99,12 @@ marshals and unmarshals inputs and outputs through V8's type system, etc. The fr
 exposes simple functions and types which are friendly to the Python `ctypes` system.
 These simple C++ functions in turn call the C++ V8 APIs.
 
-As noted below, `v8_py_frontend` is *not* a Python extension (it does *not* include
+As noted below, `v8_py_frontend` is _not_ a Python extension (it does _not_ include
 `Python.h` or link `libpython`, and it does not touch Python types).
 
 ### (Compiled) `src/py_mini_racer/libmini_racer.so`, `src/py_mini_racer/mini_racer.dll`, `src/py_mini_racer/libmini_racer.dylib`
 
-These files (*which one* depends on the platform) contain the compiled V8 build,
+These files (_which one_ depends on the platform) contain the compiled V8 build,
 complete with the frontend from `src/v8_py_frontend`.
 
 ### (Compiled) `src/py_mini_racer/icudtl.dat`
@@ -100,9 +112,11 @@ complete with the frontend from `src/v8_py_frontend`.
 This is a build-time-generated internationalization artifact, used
 [at runtime by V8](https://v8.dev/docs/i18n) and thus shipped with PyMiniRacer.
 
-### (Compiled) `src/py_mini_racer/snapshot_blob.bin`
+### (Defunct) `src/py_mini_racer/snapshot_blob.bin`
 
-This is a build-time-generated
+_Update: We now build this into PyMiniRacer using a v8 "monolith" build._
+
+This ~is~ _was_ a build-time-generated
 [startup snapshot](https://v8.dev/blog/custom-startup-snapshots), used at runtime by V8
 and thus shipped with PyMiniRacer. This is a snapshot of the JavaScript heap including
 JavaScript built-ins, which accelerates JS engine startup.
@@ -141,8 +155,8 @@ both:
 Our success at minimizing the interface with the V8 build system can be measured by:
 
 1. The number of times the text `v8::` appears in `src/v8_py_frontend`, and
-1. The length of `helpers/v8.build.py` (467 lines as of this writing!). Making V8 build
-    on multiple platforms takes a lot of trickery...
+1. The length of `builder/v8.build.py` (467 lines as of this writing!). Making V8 build
+   on multiple platforms takes a lot of trickery...
 
 ### Build V8 from source
 
@@ -154,19 +168,17 @@ PyMiniRacer!) which wants to integrate V8 must first build it.
 ### Build PyPI wheels
 
 Because V8 takes so long to build (about 2-3 hours at present on the free GitHub Actions
-runners, and >12 hours when emulating `aarch64` on them), we want to build wheels for
-PyPI. We don't want folks to have to build V8 when they `pip install mini-racer`!
+runners), we want to build wheels for PyPI. We don't want folks to have to build V8 when
+they `pip install mini-racer`!
 
 We build wheels for many operating systems and architectures based on popular demand via
 GitHib issues. Currently the list is
-`{x86_64, aarch64} × {Debian Linux, Alpine Linux, Mac, Windows}` (but skipping Windows
-`aarch64` for now since there is not yet either a GitHub Actions runner, or emulation
-layer for it).
+`{x86_64, aarch64} × {Debian Linux, Alpine Linux, Mac, Windows}`.
 
 ### Use the free GitHub Actions hosted runners
 
 PyMiniRacer is not a funded project, so we run on the free GitHub Actions hosted
-runners. These currently let us build for many key platforms (including via emulation).
+runners. These currently let us build for many key platforms.
 
 This also lets contributors easily run the same build automation by simply forking the
 PyMiniRacer repo and running the workflows (for free!) within their own forks.
@@ -176,29 +188,20 @@ PyMiniRacer repo and running the workflows (for free!) within their own forks.
 We'd rather avoid directly interfacing with the CPython API, for a couple reasons:
 
 1. **API flux**: Similar to the above note about V8, the CPython API is complex and
-    always in flux, *although not as much as V8*).
+   always in flux, _although not as much as V8_).
 1. **Version proliferation**: there are a ton of active Python versions (as of this
-    writing, PyMiniRacer supports 3.8, 3.9, 3.10, 3.11, and 3.12, and also there's
-    CPython and PyPy). PyMiniRacer *already* includes builds for 7 target architectures
-    (see above); if we factor in 5x Python versions and 2x Python interpreters, we will
-    wind up with 70 wheels, all on a free GitHub Actions runner!
+   writing, PyMiniRacer supports 3.8, 3.9, 3.10, 3.11, and 3.12, and also there's
+   CPython and PyPy). PyMiniRacer _already_ includes builds for 7 target architectures
+   (see above); if we factor in 5x Python versions and 2x Python interpreters, we will
+   wind up with 70 wheels, all on a free GitHub Actions runner!
 
-So, *instead of* an extension module (which includes `Python.h` and links against
+So, _instead of_ an extension module (which includes `Python.h` and links against
 `libpython`), we build an ordinary Python-independent C++ library, and use `ctypes` to
 access it.
 
 Consequently, `libmini_racer.so` isn't specific to Python, and the code barely mentions
 Python. One could in theory use it from any other language which knows how to call C
 APIs, such as Java, Go, C#, ... or just C. No one does so as of this writing.
-
-### Use `uraimo/run-on-arch-action`
-
-So, we need to build wheels for multiple architectures. For Windows and Mac (`x86_64` on
-Windows, and both `x86_64` and `aarch64` on Mac) we can can use GitHub hosted runners
-as-is. For Linux builds (Debian and Alpine, and `x86_64` and `aarch64`), we use the
-fantastic GitHub Action workflow step
-[`uraimo/run-on-arch-action`](https://github.com/uraimo/run-on-arch-action), which lets
-us build a docker container on the fly and run it on QEMU.
 
 ### Don't use `cibuildwheel`
 
@@ -207,11 +210,11 @@ Many modern Python projects which need to build wheels with native code use
 builds. However, `cibuildwheel` isn't a perfect fit here. Because we are building
 Python-independent dynamic-link libraries instead of Python extension modules modules
 for the reasons noted above, we aren't linking with any particular Python ABI. Thus we
-need *only* `(operating systems × architectures)` builds, whereas `cibuildwheel`
+need _only_ `(operating systems × architectures)` builds, whereas `cibuildwheel`
 generates `(operating systems × architecture × Python flavors × Python versions)`
 wheels.
 [That's a ton of wheels](https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip)!
-Given that it takes hours to *days* to build PyMiniRacer for *one* target OS and
+Given that it takes hours to _days_ to build PyMiniRacer for _one_ target OS and
 architecture, doing redundant builds is undesirable.
 
 It might be possible to use `cibuildwheel` with PyMiniRacer by segmenting the build of
@@ -219,55 +222,60 @@ the dynamic-link library (i.e., `libmini_racer.so`) from the actual wheel build.
 is, we could have the following separate components:
 
 1. Create a separate Github Actions workflow to build the `libmini_racer.so` binary
-    (i.e., the hard part). Publish that as a release, using the GitHub release artifact
-    management system as a distribution mechanism.
+   (i.e., the hard part). Publish that as a release, using the GitHub release artifact
+   management system as a distribution mechanism.
 1. The wheel build step could then simply download a pre-built binary from the latest
-    GitHub release. We could use `cibuildwheel` to manage this step. This would
-    generate many redundant wheels (because the wheels we'd generate for, say, CPython
-    3.9 and 3.10 would be identical), but it wouldn't matter because it would be cheap
-    and automatic.
+   GitHub release. We could use `cibuildwheel` to manage this step. This would generate
+   many redundant wheels (because the wheels we'd generate for, say, CPython 3.9 and
+   3.10 would be identical), but it wouldn't matter because it would be cheap and
+   automatic.
 
 This is similar to how the Ruby [`mini_racer`](https://github.com/rubyjs/mini_racer) and
 [`libv8-node`](https://github.com/rubyjs/libv8-node) projects, which inspired
 PyMiniRacer, work together today.
 
-To sum up, to use `cibuildwheel`, we would still need our own *separate*
-multi-architecture build workflow for V8, *ahead of* the `cibuildwheel` step. So
+To sum up, to use `cibuildwheel`, we would still need our own _separate_
+multi-architecture build workflow for V8, _ahead of_ the `cibuildwheel` step. So
 `cibuildwheel` could potentially simplify the actual wheel distribution for us, but it
 wouldn't simplify the overall workflow management.
 
-### Use `sccache` to patch around build timeouts
+### Build with cross-compile for aarch64 on Linux and Windows
 
-As of this writing, the Linux `aarch64` builds run on emulation becaues GitHub Actions
-has no free hosted `aarch64` runners for Linux. This makes them so slow, they struggle
-to complete at all. They take about 24 hours to run. The GitHub Actions
-[job timeout is only 6 hours](https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits),
-so we have to restart the jobs multiple times. We rely on
-[`sccache`](https://github.com/mozilla/sccache) to catch the build up to prior progress.
+Trial and error indicates the V8 build process is simply not geared to be run on an
+actual Linux or Windows Arm machine. Various parts of the build system keep trying to
+run x86_64 tools (like a pre-built clang or rustc). On the other hand, cross-compiling
+works very well out of the box, so we do that!
 
-It would in theory be less ugly to segment the build into small interlinked jobs of less
-than 6 hours each so they each succeed, but for now it's simpler to just manually
-restart the failed jobs, each time loading from the build cache and making progress,
-until they finally succeed. Hopefully at some point GitHub will provide native `aarch64`
-Linux runners, which will alleviate this problem.
+This doesn't apply on MacOS which has good native MacOS support on Arm, since that's
+obviously what many or most developers are using.
 
-Hopefully,
-[per this GitHub community discussion thread](https://github.com/orgs/community/discussions/19197),
-we will get a free Linux `aarch64` runner in 2024 and can dispense with
-cross-architecture emulation.
+### Build for Alpine as a cross-compatible glibc binary
 
-### Build V8 *with* our frontend (`v8_py_frontend`) as a snuck-in component
+Prior versions of PyMiniRacer build V8 natively on Alpine, using a series of hacks and
+patches.
 
-We could *just* get a static library (i.e., `libv8.a`) from the V8 build, and link that
+This seems to be hopeless today; there are just too many parts of the V8 build which are
+incompatible with Alpine (and assume that "Linux" means "glibc"). Both the clang and
+rustc configuration systems are hard-wired in many ways that preclude operation on
+Alpine without extensive patching (or just dispensing with the V8 build system
+entirely!).
+
+So instead we build a on Ubuntu with glibc and then put that into a wheel on Alpine. To
+use the resulting wheel, you must `apk add gcompat` and add the environment variable
+`LD_PRELOAD="/lib/libgcompat.so.0"`.
+
+### Build V8 _with_ our frontend (`v8_py_frontend`) as a snuck-in component
+
+We could _just_ get a static library (i.e., `libv8.a`) from the V8 build, and link that
 into a dynamic-link library (i.e., `libmini_racer.so`) ourselves.
 
 However:
 
-1. We do have *more* C++ files to compile (the C++ code in `src/v8_py_frontend`)
+1. We do have _more_ C++ files to compile (the C++ code in `src/v8_py_frontend`)
 1. Because we're not making a true Python extension module (see above), we aren't using
-    Python's `setuptools` `Extension` infrastructure to perform a build.
+   Python's `setuptools` `Extension` infrastructure to perform a build.
 
-This leaves us needing *some* platform-independent C++ toolchain.
+This leaves us needing _some_ platform-independent C++ toolchain.
 
 V8 already has such a toolchain, based on Ninja and Generated Ninja files (GN). We
 already have to set it up to build V8 from source (see above for why!).
@@ -306,7 +314,7 @@ actually relying on this functionality to trigger callbacks to C++ to clean thin
 heartily discouraged. Exploratory attempts to make this with PyMiniRacer actually didn't
 work at all.
 
-Even if we *could* get V8 to call us back reliably to tear down objects (e.g., by
+Even if we _could_ get V8 to call us back reliably to tear down objects (e.g., by
 exposing an explicit teardown function to JavaScript), it would be hard to create a
 design which does so safely. V8 (per our security goals) may be running adversarial
 JavaScript which might try and use a reference after we free it, exploiting a
@@ -314,9 +322,9 @@ use-after-free bug.
 
 ### Any raw C++ object pointers and references given to JavaScript must outlive the `v8::Isolate`
 
-Due to the above rule, we can't rely on V8 to tell us when it's *done with* any
+Due to the above rule, we can't rely on V8 to tell us when it's _done with_ any
 references we give it, until the `v8::Isolate` is torn down. So clearly the only thing
-we *can* do is ensure any raw pointers or references we hand to V8 are valid until after
+we _can_ do is ensure any raw pointers or references we hand to V8 are valid until after
 the `v8::Isolate` is torn down.
 
 ### Use JavaScript integer IDs to track any allocated objects on the C++ side
@@ -342,9 +350,9 @@ ignored.
 
 ### Buggy Python shouldn't be able to crash C++
 
-Similar to, but with a lower priority than the above rule regarding bad *JavaScript*,
-bad *Python* should not be able to crash the Python interpretter through PyMiniRacer.
-This is a common design principle for Python; bad code should *not* result in
+Similar to, but with a lower priority than the above rule regarding bad _JavaScript_,
+bad _Python_ should not be able to crash the Python interpretter through PyMiniRacer.
+This is a common design principle for Python; bad code should _not_ result in
 segmentation faults, sending developers scrambling to C/C++ debugging of core files,
 etc. Extension modules should uphold this principle.
 
@@ -353,7 +361,7 @@ not and cannot protect itself from intentionally bad (i.e., adversarial) Python 
 determined Python programmer can always crash Python with ease without any help from
 PyMiniRacer. Try it!: `import ctypes; ctypes.cast(0x1, ctypes.c_char_p).value`
 
-### Minimize trust of Python in *automatic* memory management of C++ objects
+### Minimize trust of Python in _automatic_ memory management of C++ objects
 
 Python is also a garbage-collected language, and like JavaScript, it
 [offers](https://docs.python.org/3/reference/datamodel.html#object.__del__) best-effort
@@ -364,12 +372,12 @@ Like in JavaScript code, relying on Python's finalizer functionality is
 We can, at best, use `__del__` as a shortcut signaling we can go ahead and free
 something to help reduce memory usage, but we shouldn't rely on it.
 
-Since, unlike JavaScript, we *do* trust Python code, we can create explicit Python APIs
+Since, unlike JavaScript, we _do_ trust Python code, we can create explicit Python APIs
 to manage object lifecycle. The Pythonic way to do that is with
 [context managers](https://docs.python.org/3/reference/datamodel.html#context-managers).
 
 Thus, for example, the MiniRacer Python `_Context` object, which wraps exactly one C++
-`MiniRacer::Context` object, provides *both* a `__del__` finalizer for easy cleanup
+`MiniRacer::Context` object, provides _both_ a `__del__` finalizer for easy cleanup
 which always works "eventually", and an explicit context manager interface for
 PyMiniRacer users who want strong guarantees about teardown.
 
@@ -381,7 +389,7 @@ send, receive, and mutate data shared between Python and C.
 This is obviously somewhat dangerous. Array overruns are an obvious problem.
 Use-after-free is more insidious: imagine the C++ side of PyMiniRacer returns a pointer
 to an object to Python, Python stores that pointer, the C++ frees the object, and then
-Python tries to use the pointer. This will work *sometimes* and crash—or worse, read
+Python tries to use the pointer. This will work _sometimes_ and crash—or worse, read
 incorrect data—at other times.
 
 ### Use Python integer IDs to track any allocated objects on the C++ side
@@ -399,20 +407,20 @@ the contents of `BinaryValueHandle` pointers, to read primitive values (e.g., bo
 integers, and strings).
 
 We do this for theoretical performance reasons which have not yet been validated. To be
-consistent with the rest of PyMiniRacer's design, we *could* create an API like:
+consistent with the rest of PyMiniRacer's design, we _could_ create an API like:
 
 1. C++ generates a numeric `value_id` and stores a BinaryValue in a
-    `std::unordered_map<uint64_t, std::shared_ptr<BinaryValue>>`.
+   `std::unordered_map<uint64_t, std::shared_ptr<BinaryValue>>`.
 1. C++ gives Python that `value_id` to Python.
 1. To get any data Python has to call APIs like `mr_value_type(context_id, value_id)`,
-    `mr_value_as_bool(context_id, value_id)`,
-    `mr_value_as_string_len(context_id, value_id)`,
-    `mr_value_as_string(context_id, value_id, buf, buflen)`, ...
+   `mr_value_as_bool(context_id, value_id)`,
+   `mr_value_as_string_len(context_id, value_id)`,
+   `mr_value_as_string(context_id, value_id, buf, buflen)`, ...
 1. Eventually Python calls `mr_value_free(context_id, value_id)` which wipes out the map
-    entry, thus freeing the `BinaryValue`.
+   entry, thus freeing the `BinaryValue`.
 
-_**Note: We don't do this. The above is _not_ how PyMiniRacer actually handles
-values.**_
+_\*\*Note: We don't do this. The above is \_not_ how PyMiniRacer actually handles
+values.\*\*\_
 
 This is surely slower than direct pointer access, but no performance analysis has been
 done to see if it matters. It might be interesting to try the above and benchmark it. It
@@ -422,7 +430,7 @@ For now at least, we instead use raw pointers for this case.
 
 We still don't fully trust Python with the lifecyce of `BinaryValueHandle` pointers;
 when Python passes these pointers back to C++, we still check validity by looking up the
-pointer as a key into a map (which then lets the C++ side of PyMiniRacer find the *rest*
+pointer as a key into a map (which then lets the C++ side of PyMiniRacer find the _rest_
 of the `BinaryValue` object). The C++ `MiniRacer::BinaryValueFactory` can
 authoritatively destruct any dangling `BinaryValue` objects when it exits.
 
@@ -430,7 +438,7 @@ This last especially helps with an odd scenario introduced by Python `__del__`: 
 order in which Python calls `__del__` on a collection of objects is neither guaranteed
 nor very predictable. When a Python program drops references to a Python `MiniRacer`
 object, it's common for Python to call `_Context.__del__` before it calls
-`ValHandle.__del__`, thus destroying *the container for* the value before it destroys
+`ValHandle.__del__`, thus destroying _the container for_ the value before it destroys
 the value itself. The C++ side of PyMiniRacer can easily detect this scenario: First,
 when destroying the `MiniRacer::Context`, it sees straggling `BinaryValue`s and destroys
 them. Then, when Python asks C++ to destroy the straggling `BinaryValueHandle`s, the C++
@@ -442,7 +450,7 @@ The above scenario does imply a possibility for dangling pointer access: if Pyth
 `BinaryValueHandle` pointers, it will be committing a use-after-free error. We mitigate
 this problem by hiding `BinaryValueHandle` within PyMiniRacer's Python code, and by
 giving `ValHandle` (our Python wrapper of `BinaryValueHandle`) a reference to the
-`_Context`, preventing the context from being finalized until the `ValHandle` is *also*
+`_Context`, preventing the context from being finalized until the `ValHandle` is _also_
 in Python's garbage list and on its way out.
 
 ### Only touch (most of) the `v8::Isolate` from within the message loop
@@ -451,7 +459,7 @@ While a `v8::Isolate` is generally a thread-aware and multi-threaded object, mos
 methods are not thread-safe. The same goes for most `v8` objects. It is, generally, only
 safe to touch things belonging to a `v8::Isolate` if you hold the `v8::Locker` lock. (To
 make matters more interesting, documentation about what things might be safe to do
-*without* the lock is pretty scarce. You find out when your unsafe code crashes. Which,
+_without_ the lock is pretty scarce. You find out when your unsafe code crashes. Which,
 you know, might not happen until years after you wrote the unsafe code. C++ is fun!)
 
 The "don't touch the `v8::Isolate` without holding the `v8::Locker`" rule is made
@@ -467,7 +475,7 @@ and yet other threads (i.e., Python threads) need that lock so they can poke at
 We resolve the conundrum by leveraging part of the `v8::Isolate` itself, using a trick
 similar to what NodeJS does: everything that needs to touch a `v8::Isolate` should
 simply run from the `v8::Isolate`'s own message loop. If you want to run JS code,
-manipulate an object, *or even delete a V8 object*, you must submit a task to the
+manipulate an object, _or even delete a V8 object_, you must submit a task to the
 message loop. Then nothing but the message loop itself should need to hold the
 `v8::Locker` lock, because only the message loop ever touches the `v8::Isolate`.
 
@@ -476,7 +484,7 @@ an easy API to submit tasks, whose callbacks accept as their first-and-only argu
 `v8::Isolate*`. Such tasks can freely work on the isolate until they exit. (Obviously,
 saving a copy of the pointer and using it later would defeat the point; don't do that.)
 
-One odd tidbit of PyMiniRacer is that *even object destruction* has to use the above
+One odd tidbit of PyMiniRacer is that _even object destruction_ has to use the above
 pattern. For example, it is (probably) not safe to free a `v8::Persistent` without
 holding the isolate lock, so when a non-message-loop thread needs to destroy a wrapped
 V8 value, we enqueue a pretty trivial task for the message loop:

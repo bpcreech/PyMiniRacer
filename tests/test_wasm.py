@@ -1,28 +1,34 @@
 """Test executing a WASM module."""
 
-from os.path import abspath, dirname, getsize
-from os.path import join as pathjoin
+from __future__ import annotations
+
+from pathlib import Path
+from typing import cast
 
 from py_mini_racer import MiniRacer
+from tests.gc_check import assert_no_v8_objects
 
-test_dir = dirname(abspath(__file__))
+test_dir = Path(__file__).parent
 
 
-def test_add(gc_check):
-    fn = pathjoin(test_dir, "add.wasm")
+def test_add() -> None:
+    fn = test_dir / "add.wasm"
     mr = MiniRacer()
 
     # 1. Allocate a buffer to hold the WASM module code
-    size = getsize(fn)
-    module_raw = mr.eval(
-        f"""
+    size = Path(fn).stat().st_size
+    module_raw = cast(
+        "memoryview",
+        mr.eval(
+            f"""
     const moduleRaw = new SharedArrayBuffer({size});
     moduleRaw
-    """
+    """,
+        ),
     )
 
     # 2. Read the WASM module code
-    with open(fn, "rb") as f:
+    with Path(fn).open("rb") as f:
         assert f.readinto(module_raw) == size
 
     # 3. Instantiate the WASM module
@@ -32,7 +38,7 @@ def test_add(gc_check):
     WebAssembly.instantiate(new Uint8Array(moduleRaw)).then(result => {
         res = result.instance;
     }).catch(result => { res = result.message; });
-    """
+    """,
     )
 
     # 4. Wait for WASM module instantiation
@@ -42,7 +48,7 @@ def test_add(gc_check):
     assert mr.eval("typeof res !== 'string'")
 
     # 5. Execute a WASM function
-    assert mr.eval("res.exports.addTwo(1, 2)") == 3
+    assert mr.eval("res.exports.addTwo(1, 2)") == 3  # noqa: PLR2004
 
     del module_raw
-    gc_check.check(mr)
+    assert_no_v8_objects(mr)

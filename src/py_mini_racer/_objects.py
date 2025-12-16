@@ -5,32 +5,28 @@ from __future__ import annotations
 from asyncio import get_running_loop
 from contextlib import ExitStack
 from operator import index as op_index
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generator,
-    Iterator,
-    MutableMapping,
-    MutableSequence,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 
+from py_mini_racer._exc import JSArrayIndexError, JSPromiseError
 from py_mini_racer._sync_future import SyncFuture
 from py_mini_racer._types import (
-    JSEvalException,
+    JSArray,
+    JSFunction,
+    JSMappedObject,
     JSObject,
+    JSPromise,
+    JSSymbol,
     JSUndefined,
     JSUndefinedType,
-    MiniRacerBaseException,
     PythonJSConvertedTypes,
 )
 
 if TYPE_CHECKING:
     from asyncio import Future
+    from collections.abc import Callable, Generator, Iterator
 
     from py_mini_racer._abstract_context import AbstractContext, AbstractValueHandle
-    from py_mini_racer._numeric import Numeric
+    from py_mini_racer._exc import JSEvalException
 
 
 def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
@@ -38,26 +34,9 @@ def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
         return str(reason)
 
     if "stack" in reason:
-        return cast(str, reason["stack"])
+        return cast("str", reason["stack"])
 
     return str(reason)
-
-
-class JSPromiseError(MiniRacerBaseException):
-    """JavaScript rejected a promise."""
-
-    def __init__(self, reason: PythonJSConvertedTypes) -> None:
-        super().__init__(
-            f"JavaScript rejected promise with reason: {_get_exception_msg(reason)}\n"
-        )
-        self.reason = reason
-
-
-class JSArrayIndexError(IndexError, MiniRacerBaseException):
-    """Invalid index into a JSArray."""
-
-    def __init__(self) -> None:
-        super().__init__("JSArray deletion out of range")
 
 
 class JSObjectImpl(JSObject):
@@ -67,7 +46,7 @@ class JSObjectImpl(JSObject):
         self,
         ctx: AbstractContext,
         handle: AbstractValueHandle,
-    ):
+    ) -> None:
         self._ctx = ctx
         self._handle = handle
 
@@ -79,10 +58,7 @@ class JSObjectImpl(JSObject):
         return self._handle
 
 
-class JSMappedObject(
-    JSObjectImpl,
-    MutableMapping[PythonJSConvertedTypes, PythonJSConvertedTypes],
-):
+class JSMappedObjectImpl(JSObjectImpl, JSMappedObject):
     """A JavaScript object with Pythonic MutableMapping methods (`keys()`,
     `__getitem__()`, etc).
 
@@ -97,7 +73,9 @@ class JSMappedObject(
         return self._ctx.get_object_item(self, key)
 
     def __setitem__(
-        self, key: PythonJSConvertedTypes, val: PythonJSConvertedTypes
+        self,
+        key: PythonJSConvertedTypes,
+        val: PythonJSConvertedTypes,
     ) -> None:
         self._ctx.set_object_item(self, key, val)
 
@@ -111,7 +89,7 @@ class JSMappedObject(
         return self._ctx.get_own_property_names(self)
 
 
-class JSArray(MutableSequence[PythonJSConvertedTypes], JSObjectImpl):
+class JSArrayImpl(JSArray, JSObjectImpl):
     """JavaScript array.
 
     Has Pythonic MutableSequence methods (e.g., `insert()`, `__getitem__()`, ...).
@@ -119,9 +97,9 @@ class JSArray(MutableSequence[PythonJSConvertedTypes], JSObjectImpl):
 
     def __len__(self) -> int:
         ret = self._ctx.get_object_item(self, "length")
-        return cast(int, ret)
+        return cast("int", ret)
 
-    def __getitem__(self, index: int | slice) -> Any:
+    def __getitem__(self, index: int | slice) -> Any:  # noqa: ANN401
         if not isinstance(index, int):
             raise TypeError
 
@@ -134,7 +112,7 @@ class JSArray(MutableSequence[PythonJSConvertedTypes], JSObjectImpl):
 
         raise IndexError
 
-    def __setitem__(self, index: int | slice, val: Any) -> None:
+    def __setitem__(self, index: int | slice, val: Any) -> None:  # noqa: ANN401
         if not isinstance(index, int):
             raise TypeError
 
@@ -154,17 +132,17 @@ class JSArray(MutableSequence[PythonJSConvertedTypes], JSObjectImpl):
             # bounds:
             raise JSArrayIndexError
 
-        return self._ctx.del_from_array(self, index)
+        self._ctx.del_from_array(self, index)
 
     def insert(self, index: int, new_obj: PythonJSConvertedTypes) -> None:
-        return self._ctx.array_insert(self, index, new_obj)
+        self._ctx.array_insert(self, index, new_obj)
 
     def __iter__(self) -> Iterator[PythonJSConvertedTypes]:
         for i in range(len(self)):
             yield self[i]
 
 
-class JSFunction(JSMappedObject):
+class JSFunctionImpl(JSMappedObjectImpl, JSFunction):
     """JavaScript function.
 
     You can call this object from Python, passing in positional args to match what the
@@ -174,17 +152,17 @@ class JSFunction(JSMappedObject):
     def __call__(
         self,
         *args: PythonJSConvertedTypes,
-        this: JSObjectImpl | JSUndefinedType = JSUndefined,
-        timeout_sec: Numeric | None = None,
+        this: JSObject | JSUndefinedType = JSUndefined,
+        timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes:
         return self._ctx.call_function(self, *args, this=this, timeout_sec=timeout_sec)
 
 
-class JSSymbol(JSMappedObject):
+class JSSymbolImpl(JSMappedObjectImpl, JSSymbol):
     """JavaScript symbol."""
 
 
-class JSPromise(JSObjectImpl):
+class JSPromiseImpl(JSObjectImpl, JSPromise):
     """JavaScript Promise.
 
     To get a value, call `promise.get()` to block, or `await promise` from within an
@@ -192,7 +170,7 @@ class JSPromise(JSObjectImpl):
     is rejected.
     """
 
-    def get(self, *, timeout: Numeric | None = None) -> PythonJSConvertedTypes:
+    def get(self, *, timeout: float | None = None) -> PythonJSConvertedTypes:
         """Get the value, or raise an exception. This call blocks.
 
         Args:
@@ -202,7 +180,7 @@ class JSPromise(JSObjectImpl):
 
         future = SyncFuture()
 
-        def future_caller(value: Any) -> None:
+        def future_caller(value: Any) -> None:  # noqa: ANN401
             future.set_result(value)
 
         self._attach_callbacks_to_promise(future_caller)
@@ -217,7 +195,7 @@ class JSPromise(JSObjectImpl):
         loop = get_running_loop()
         future: Future[PythonJSConvertedTypes] = loop.create_future()
 
-        def future_caller(value: Any) -> None:
+        def future_caller(value: Any) -> None:  # noqa: ANN401
             loop.call_soon_threadsafe(future.set_result, value)
 
         self._attach_callbacks_to_promise(future_caller)
@@ -237,27 +215,28 @@ class JSPromise(JSObjectImpl):
             value: PythonJSConvertedTypes | JSEvalException,
         ) -> None:
             exit_stack.__exit__(None, None, None)
-            future_caller([False, cast(JSArray, value)])
+            future_caller([False, cast("JSArray", value)])
 
         on_resolved_js_func = exit_stack.enter_context(
-            self._ctx.js_callback(on_resolved_and_cleanup)
+            self._ctx.js_callback(on_resolved_and_cleanup),
         )
 
         def on_rejected_and_cleanup(
             value: PythonJSConvertedTypes | JSEvalException,
         ) -> None:
             exit_stack.__exit__(None, None, None)
-            future_caller([True, cast(JSArray, value)])
+            future_caller([True, cast("JSArray", value)])
 
         on_rejected_js_func = exit_stack.enter_context(
-            self._ctx.js_callback(on_rejected_and_cleanup)
+            self._ctx.js_callback(on_rejected_and_cleanup),
         )
 
         self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
 
-    def _unpack_promise_results(self, results: Any) -> PythonJSConvertedTypes:
+    def _unpack_promise_results(self, results: Any) -> PythonJSConvertedTypes:  # noqa: ANN401
         is_rejected, argv = results
-        result = cast(PythonJSConvertedTypes, cast(JSArray, argv)[0])
+        result = cast("JSArray", argv)[0]
         if is_rejected:
-            raise JSPromiseError(result)
+            msg = _get_exception_msg(result)
+            raise JSPromiseError(msg)
         return result

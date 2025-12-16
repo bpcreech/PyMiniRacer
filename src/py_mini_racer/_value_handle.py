@@ -8,24 +8,26 @@ from typing import (
 )
 
 from py_mini_racer._abstract_context import AbstractContext, AbstractValueHandle
+from py_mini_racer._exc import JSEvalException, MiniRacerBaseException
 from py_mini_racer._objects import (
-    JSArray,
-    JSFunction,
-    JSMappedObject,
+    JSArrayImpl,
+    JSFunctionImpl,
+    JSMappedObjectImpl,
     JSObjectImpl,
-    JSPromise,
-    JSSymbol,
+    JSPromiseImpl,
+    JSSymbolImpl,
 )
 from py_mini_racer._types import (
-    JSEvalException,
     JSUndefined,
-    MiniRacerBaseException,
     PythonJSConvertedTypes,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 class _RawValueUnion(ctypes.Union):
-    _fields_: ClassVar[list[tuple[str, object]]] = [
+    _fields_: ClassVar[Sequence[tuple[str, type]]] = [
         ("value_ptr", ctypes.c_void_p),
         ("bytes_val", ctypes.POINTER(ctypes.c_char)),
         ("char_p_val", ctypes.c_char_p),
@@ -35,7 +37,7 @@ class _RawValueUnion(ctypes.Union):
 
 
 class _RawValue(ctypes.Structure):
-    _fields_: ClassVar[list[tuple[str, object]]] = [
+    _fields_: ClassVar[Sequence[tuple[str, type]]] = [
         ("value", _RawValueUnion),
         ("len", ctypes.c_size_t),
         ("type", ctypes.c_uint8),
@@ -52,9 +54,7 @@ if TYPE_CHECKING:
 class _ArrayBufferByte(ctypes.Structure):
     # Cannot use c_ubyte directly because it uses <B
     # as an internal type but we need B for memoryview.
-    _fields_: ClassVar[list[tuple[str, object]]] = [
-        ("b", ctypes.c_ubyte),
-    ]
+    _fields_: ClassVar[Sequence[tuple[str, type]]] = [("b", ctypes.c_ubyte)]
     _pack_ = 1
 
 
@@ -145,7 +145,7 @@ class ValueHandle(AbstractValueHandle):
     """An object which holds open a Python reference to a _RawValue owned by
     a C++ MiniRacer context."""
 
-    def __init__(self, ctx: AbstractContext, raw: RawValueHandleType):
+    def __init__(self, ctx: AbstractContext, raw: RawValueHandleType) -> None:
         self.ctx = ctx
         self._raw = raw
 
@@ -162,7 +162,7 @@ class ValueHandle(AbstractValueHandle):
             raise val
         return val
 
-    def to_python(self) -> PythonJSConvertedTypes | JSEvalException:
+    def to_python(self) -> PythonJSConvertedTypes | JSEvalException:  # noqa: C901, PLR0911, PLR0912
         """Convert a binary value handle from the C++ side into a Python object."""
 
         # A MiniRacer binary value handle is a pointer to a structure which, for some
@@ -205,13 +205,13 @@ class ValueHandle(AbstractValueHandle):
         if typ == MiniRacerTypes.str_utf8:
             return str(val.bytes_val[0:length].decode("utf-8"))
         if typ == MiniRacerTypes.function:
-            return JSFunction(self.ctx, self)
+            return JSFunctionImpl(self.ctx, self)
         if typ == MiniRacerTypes.date:
             timestamp = val.double_val
             # JS timestamps are milliseconds. In Python we are in seconds:
             return datetime.fromtimestamp(timestamp / 1000.0, timezone.utc)
         if typ == MiniRacerTypes.symbol:
-            return JSSymbol(self.ctx, self)
+            return JSSymbolImpl(self.ctx, self)
         if typ in (MiniRacerTypes.shared_array_buffer, MiniRacerTypes.array_buffer):
             buf = _ArrayBufferByte * length
             cdata = buf.from_address(val.value_ptr)
@@ -224,18 +224,18 @@ class ValueHandle(AbstractValueHandle):
             return result.cast("B")
 
         if typ == MiniRacerTypes.promise:
-            return JSPromise(self.ctx, self)
+            return JSPromiseImpl(self.ctx, self)
 
         if typ == MiniRacerTypes.array:
-            return JSArray(self.ctx, self)
+            return JSArrayImpl(self.ctx, self)
 
         if typ == MiniRacerTypes.object:
-            return JSMappedObject(self.ctx, self)
+            return JSMappedObjectImpl(self.ctx, self)
 
         raise JSConversionException
 
 
-def python_to_value_handle(
+def python_to_value_handle(  # noqa: PLR0911
     context: AbstractContext, obj: PythonJSConvertedTypes
 ) -> AbstractValueHandle:
     if isinstance(obj, JSObjectImpl):
@@ -269,7 +269,8 @@ def python_to_value_handle(
     if isinstance(obj, datetime):
         # JS timestamps are milliseconds. In Python we are in seconds:
         return context.create_doublish_val(
-            obj.timestamp() * 1000.0, MiniRacerTypes.date
+            obj.timestamp() * 1000.0,
+            MiniRacerTypes.date,
         )
 
     # Note: we skip shared array buffers, so for now at least, handles to shared

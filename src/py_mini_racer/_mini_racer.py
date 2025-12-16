@@ -10,8 +10,8 @@ from typing import (
 
 from py_mini_racer._context import Context
 from py_mini_racer._dll import init_mini_racer
+from py_mini_racer._exc import MiniRacerBaseException
 from py_mini_racer._set_timeout import INSTALL_SET_TIMEOUT
-from py_mini_racer._types import MiniRacerBaseException
 
 if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
@@ -20,15 +20,13 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from py_mini_racer._context import PyJsFunctionType
-    from py_mini_racer._numeric import Numeric
-    from py_mini_racer._objects import JSFunction
-    from py_mini_racer._types import PythonJSConvertedTypes
+    from py_mini_racer._types import JSFunction, PythonJSConvertedTypes
 
 
 class WrongReturnTypeException(MiniRacerBaseException):
     """Invalid type returned by the JavaScript runtime."""
 
-    def __init__(self, typ: type):
+    def __init__(self, typ: type) -> None:
         super().__init__(f"Unexpected return value type {typ}")
 
 
@@ -89,8 +87,8 @@ class MiniRacer:
     def eval(
         self,
         code: str,
-        timeout: Numeric | None = None,
-        timeout_sec: Numeric | None = None,
+        timeout: float | None = None,
+        timeout_sec: float | None = None,
         max_memory: int | None = None,
     ) -> PythonJSConvertedTypes:
         """Evaluate JavaScript code in the V8 isolate.
@@ -130,10 +128,10 @@ class MiniRacer:
     def execute(
         self,
         expr: str,
-        timeout: Numeric | None = None,
-        timeout_sec: Numeric | None = None,
+        timeout: float | None = None,
+        timeout_sec: float | None = None,
         max_memory: int | None = None,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         """Helper to evaluate a JavaScript expression and return composite types.
 
         Returned value is serialized to JSON inside the V8 isolate and deserialized
@@ -162,12 +160,12 @@ class MiniRacer:
     def call(
         self,
         expr: str,
-        *args: Any,
-        encoder: JSONEncoder | None = None,
-        timeout: Numeric | None = None,
-        timeout_sec: Numeric | None = None,
+        *args: Any,  # noqa: ANN401
+        encoder: type[JSONEncoder] | None = None,
+        timeout: float | None = None,
+        timeout_sec: float | None = None,
         max_memory: int | None = None,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         """Helper to call a JavaScript function and return compositve types.
 
         The `expr` argument refers to a JavaScript function in the current V8
@@ -251,7 +249,7 @@ class MiniRacer:
         """Ask the V8 isolate to collect memory more aggressively."""
         self._ctx.low_memory_notification()
 
-    def heap_stats(self) -> Any:
+    def heap_stats(self) -> Any:  # noqa: ANN401
         """Return the V8 isolate heap statistics."""
 
         return self.json_impl.loads(self._ctx.heap_stats())

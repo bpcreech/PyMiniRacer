@@ -3,8 +3,12 @@
 See https://www.mkdocs.org/user-guide/configuration/#hooks.
 """
 
+from __future__ import annotations
 
-def on_page_markdown(markdown, **kwargs):
+from typing import Any
+
+
+def on_page_markdown(markdown: str, **kwargs: Any) -> str:  # noqa: ANN401
     del kwargs
 
     # The markdown files in the root of the repo refer to each other by name so that
@@ -13,5 +17,6 @@ def on_page_markdown(markdown, **kwargs):
     # so the URLs look better. To make the cross-links between the pages work, do light
     # surgery on them:
     return markdown.replace("ARCHITECTURE.md", "architecture.md").replace(
-        "CONTRIBUTING.md", "contributing.md"
+        "CONTRIBUTING.md",
+        "contributing.md",
     )

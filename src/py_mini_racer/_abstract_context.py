@@ -3,23 +3,20 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Callable,
 )
 
 from py_mini_racer._types import JSUndefined
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from contextlib import AbstractContextManager
 
-    from py_mini_racer._numeric import Numeric
-    from py_mini_racer._objects import (
+    from py_mini_racer._exc import JSEvalException
+    from py_mini_racer._types import (
         JSArray,
         JSFunction,
-        JSPromise,
-    )
-    from py_mini_racer._types import (
-        JSEvalException,
         JSObject,
+        JSPromise,
         JSUndefinedType,
         PythonJSConvertedTypes,
     )
@@ -53,19 +50,25 @@ class AbstractContext(ABC):
 
     @abstractmethod
     def get_own_property_names(
-        self, obj: JSObject
+        self,
+        obj: JSObject,
     ) -> tuple[PythonJSConvertedTypes, ...]:
         pass
 
     @abstractmethod
     def get_object_item(
-        self, obj: JSObject, key: PythonJSConvertedTypes
+        self,
+        obj: JSObject,
+        key: PythonJSConvertedTypes,
     ) -> PythonJSConvertedTypes:
         pass
 
     @abstractmethod
     def set_object_item(
-        self, obj: JSObject, key: PythonJSConvertedTypes, val: PythonJSConvertedTypes
+        self,
+        obj: JSObject,
+        key: PythonJSConvertedTypes,
+        val: PythonJSConvertedTypes,
     ) -> None:
         pass
 
@@ -79,7 +82,10 @@ class AbstractContext(ABC):
 
     @abstractmethod
     def array_insert(
-        self, arr: JSArray, index: int, new_val: PythonJSConvertedTypes
+        self,
+        arr: JSArray,
+        index: int,
+        new_val: PythonJSConvertedTypes,
     ) -> None:
         pass
 
@@ -89,19 +95,23 @@ class AbstractContext(ABC):
         func: JSFunction,
         *args: PythonJSConvertedTypes,
         this: JSObject | JSUndefinedType = JSUndefined,
-        timeout_sec: Numeric | None = None,
+        timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes:
         pass
 
     @abstractmethod
     def js_callback(
-        self, func: Callable[[PythonJSConvertedTypes | JSEvalException], None]
+        self,
+        func: Callable[[PythonJSConvertedTypes | JSEvalException], None],
     ) -> AbstractContextManager[JSFunction]:
         pass
 
     @abstractmethod
     def promise_then(
-        self, promise: JSPromise, on_resolved: JSFunction, on_rejected: JSFunction
+        self,
+        promise: JSPromise,
+        on_resolved: JSFunction,
+        on_rejected: JSFunction,
     ) -> None:
         pass
 
@@ -125,6 +135,6 @@ class AbstractContext(ABC):
     def evaluate(
         self,
         code: str,
-        timeout_sec: Numeric | None = None,
+        timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes:
         pass

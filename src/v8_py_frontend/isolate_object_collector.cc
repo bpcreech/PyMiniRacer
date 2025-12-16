@@ -17,7 +17,7 @@ IsolateObjectCollector::~IsolateObjectCollector() {
   collection_done_cv_.wait(lock, [this] { return !is_collecting_; });
 }
 
-void IsolateObjectCollector::StartCollectingLocked() {
+void IsolateObjectCollector::EnqueueCollectionBatchLocked() {
   is_collecting_ = true;
 
   std::ignore = isolate_manager_->Run([this](v8::Isolate*) { DoCollection(); });
@@ -41,7 +41,7 @@ void IsolateObjectCollector::DoCollection() {
     return;
   }
 
-  StartCollectingLocked();
+  EnqueueCollectionBatchLocked();
 }
 
 IsolateObjectDeleter::IsolateObjectDeleter()

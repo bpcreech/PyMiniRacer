@@ -1,0 +1,26 @@
+{
+    "name": "pyminiracer",
+    "version": "1.0.0",
+    "description": "[![PyPI status indicator](https://img.shields.io/pypi/v/mini_racer.svg)](https://pypi.python.org/pypi/mini_racer) [![Github workflow status indicator](https://github.com/bpcreech/PyMiniRacer/actions/workflows/build.yml/badge.svg)](https://github.com/bpcreech/PyMiniRacer/actions/workflows/build.yml) [![ISC License](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)",
+    "main": "index.js",
+    "directories": {
+        "doc": "docs",
+        "test": "tests"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bpcreech/PyMiniRacer.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/bpcreech/PyMiniRacer/issues"
+    },
+    "homepage": "https://github.com/bpcreech/PyMiniRacer#readme",
+    "dependencies": {
+        "prettier": "^3.7.4"
+    }
+}
