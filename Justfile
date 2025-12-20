@@ -69,12 +69,12 @@ build: build-dll build-wheel
 test:
     uv run pytest tests
 
-test-matrix:
-    uv run --python 3.10 pytest tests
-    uv run --python 3.11 pytest tests
-    uv run --python 3.12 pytest tests
-    uv run --python 3.13 pytest tests
-    uv run --python 3.14 pytest tests
+test-matrix *args:
+    uv run --python 3.10 {{args}} pytest tests
+    uv run --python 3.11 {{args}} pytest tests
+    uv run --python 3.12 {{args}} pytest tests
+    uv run --python 3.13 {{args}} pytest tests
+    uv run --python 3.14 {{args}} pytest tests
 
 git-config-global:
     git config --global core.symlinks true

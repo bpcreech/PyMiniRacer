@@ -228,10 +228,11 @@ def _open_dll(flags: Iterable[str]) -> Iterator[ctypes.CDLL]:
         # Find the dll and its external dependency files:
         meipass = getattr(sys, "_MEIPASS", None)
         if meipass is not None:
-            # We are running under PyInstaller
+            # We are running under PyInstaller.
+            # See https://github.com/bpcreech/PyMiniRacer/issues/78
             meipass_path = Path(meipass)
-            dll_path = meipass_path / dll_filename
-            icu_data_path = meipass_path / _ICU_DATA_FILENAME
+            dll_path = meipass_path / "py_mini_racer" / dll_filename
+            icu_data_path = meipass_path / "py_mini_racer" / _ICU_DATA_FILENAME
         else:
             dll_path = _open_resource_file(dll_filename, exit_stack)
             icu_data_path = _open_resource_file(_ICU_DATA_FILENAME, exit_stack)

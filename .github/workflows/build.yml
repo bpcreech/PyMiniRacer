@@ -61,6 +61,9 @@ jobs:
           - name: macos-aarch64
             os: macos-15
             target_cpu: arm64
+          - name: linux-aarch64-musl-compat
+            os: ubuntu-24.04
+            target_cpu: arm64
 
     steps:
     - uses: extractions/setup-just@v3
@@ -86,6 +89,11 @@ jobs:
 
     - name: Build dll with v8
       run: just build-dll "--out-path=_dll" "--target-cpu=${{ matrix.config.target_cpu }}"
+      if: matrix.config.name != 'linux-aarch64-musl-compat'
+
+    - name: Build dll with v8
+      run: just build-dll "--out-path=_dll" "--target-cpu=${{ matrix.config.target_cpu }}" --aarch64-musl-compat
+      if: matrix.config.name == 'linux-aarch64-musl-compat'
 
     - uses: actions/upload-artifact@v4
       with:
@@ -134,9 +142,27 @@ jobs:
         path: src/py_mini_racer
 
     - run: just build-wheel
+      if: matrix.config.os != 'windows-11-arm'
+
+    # By default, uv still uses the x86_64 python in emulation on Windows.
+    # https://github.com/astral-sh/uv/issues/12906
+    # Override this behavior to build an actual aarch64 wheel:
+    - run: UV_PYTHON=arm64 just build-wheel
+      if: matrix.config.os == 'windows-11-arm'
 
     - name: Test wheel
+      if: matrix.config.os != 'windows-11-arm'
       run: just test-matrix
+
+    # As above; uv on Windows aarch64 likes to do emulation by default
+    # (and uv has no 3.10 Python build):
+    - name: Test wheel
+      if: matrix.config.os == 'windows-11-arm'
+      run: |
+        uv run --python cpython-3.11-windows-aarch64-none pytest tests
+        uv run --python cpython-3.12-windows-aarch64-none pytest tests
+        uv run --python cpython-3.13-windows-aarch64-none pytest tests
+        uv run --python cpython-3.14-windows-aarch64-none pytest tests
 
     - uses: actions/upload-artifact@v4
       with:
@@ -157,7 +183,7 @@ jobs:
             dll: linux-x64_64
           - name: alpine-aarch64
             image: ubuntu-22.04-arm
-            dll: linux-aarch64
+            dll: linux-aarch64-musl-compat
 
     container:
       image: alpine
@@ -182,11 +208,7 @@ jobs:
       shell: /bin/sh {0}
       run: |
         apk update
-        apk add bash curl gcompat libgcc
-
-        curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
-
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+        apk add bash curl gcompat libgcc uv just
 
     - uses: actions/checkout@v3
       with:
@@ -213,15 +235,11 @@ jobs:
         # confuses uv into thinking we're on a glibc Linux and thus it rejects our
         # musl wheel.
         uv sync --python 3.10
-        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.10 pytest tests
         uv sync --python 3.11
-        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.11 pytest tests
         uv sync --python 3.12
-        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.12 pytest tests
         uv sync --python 3.13
-        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.13 pytest tests
         uv sync --python 3.14
-        LD_PRELOAD="/lib/libgcompat.so.0" uv run --frozen --python 3.14 pytest tests
+        LD_PRELOAD="/lib/libgcompat.so.0" just test-matrix --frozen
 
   release:
     name: Create GitHub release
