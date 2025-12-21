@@ -56,11 +56,7 @@ def _build_dll_handle(dll_path: Path) -> ctypes.CDLL:  # noqa: PLR0915
     handle.mr_init_context.argtypes = [MR_CALLBACK]
     handle.mr_init_context.restype = ctypes.c_uint64
 
-    handle.mr_eval.argtypes = [
-        ctypes.c_uint64,
-        RawValueHandle,
-        ctypes.c_uint64,
-    ]
+    handle.mr_eval.argtypes = [ctypes.c_uint64, RawValueHandle, ctypes.c_uint64]
     handle.mr_eval.restype = ctypes.c_uint64
 
     handle.mr_free_value.argtypes = [ctypes.c_uint64, RawValueHandle]
@@ -90,36 +86,21 @@ def _build_dll_handle(dll_path: Path) -> ctypes.CDLL:  # noqa: PLR0915
 
     handle.mr_cancel_task.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
 
-    handle.mr_heap_stats.argtypes = [
-        ctypes.c_uint64,
-        ctypes.c_uint64,
-    ]
+    handle.mr_heap_stats.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
     handle.mr_heap_stats.restype = ctypes.c_uint64
 
     handle.mr_low_memory_notification.argtypes = [ctypes.c_uint64]
 
-    handle.mr_make_js_callback.argtypes = [
-        ctypes.c_uint64,
-        ctypes.c_uint64,
-    ]
+    handle.mr_make_js_callback.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
     handle.mr_make_js_callback.restype = RawValueHandle
 
-    handle.mr_heap_snapshot.argtypes = [
-        ctypes.c_uint64,
-        ctypes.c_uint64,
-    ]
+    handle.mr_heap_snapshot.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
     handle.mr_heap_snapshot.restype = ctypes.c_uint64
 
-    handle.mr_get_identity_hash.argtypes = [
-        ctypes.c_uint64,
-        RawValueHandle,
-    ]
+    handle.mr_get_identity_hash.argtypes = [ctypes.c_uint64, RawValueHandle]
     handle.mr_get_identity_hash.restype = RawValueHandle
 
-    handle.mr_get_own_property_names.argtypes = [
-        ctypes.c_uint64,
-        RawValueHandle,
-    ]
+    handle.mr_get_own_property_names.argtypes = [ctypes.c_uint64, RawValueHandle]
     handle.mr_get_own_property_names.restype = RawValueHandle
 
     handle.mr_get_object_item.argtypes = [
@@ -203,16 +184,14 @@ class LibAlreadyInitializedError(MiniRacerBaseException):
 
     def __init__(self) -> None:
         super().__init__(
-            "MiniRacer was already initialized before the call to init_mini_racer",
+            "MiniRacer was already initialized before the call to init_mini_racer"
         )
 
 
 def _open_resource_file(filename: str, exit_stack: ExitStack) -> Path:
-    resource_path = resources.files("py_mini_racer") / filename
-
-    context_manager = resources.as_file(resource_path)
-
-    return exit_stack.enter_context(context_manager)
+    return exit_stack.enter_context(
+        resources.as_file(resources.files("py_mini_racer") / filename)
+    )
 
 
 def _check_path(path: Path) -> None:
@@ -255,9 +234,7 @@ _dll_handle = None
 
 
 def init_mini_racer(
-    *,
-    flags: Iterable[str] = DEFAULT_V8_FLAGS,
-    ignore_duplicate_init: bool = False,
+    *, flags: Iterable[str] = DEFAULT_V8_FLAGS, ignore_duplicate_init: bool = False
 ) -> ctypes.CDLL:
     """Initialize py_mini_racer (and V8).
 

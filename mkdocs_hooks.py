@@ -17,6 +17,5 @@ def on_page_markdown(markdown: str, **kwargs: Any) -> str:  # noqa: ANN401
     # so the URLs look better. To make the cross-links between the pages work, do light
     # surgery on them:
     return markdown.replace("ARCHITECTURE.md", "architecture.md").replace(
-        "CONTRIBUTING.md",
-        "contributing.md",
+        "CONTRIBUTING.md", "contributing.md"
     )

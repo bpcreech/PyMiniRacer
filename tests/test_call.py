@@ -36,12 +36,10 @@ def test_call_custom_encoder() -> None:
             return str(JSONEncoder.default(self, obj))
 
     now = datetime.now(tz=timezone.utc)
-    js_func = """var f = function(args) {
-        return args;
-    }"""
     mr = MiniRacer()
-    mr.eval(js_func)
-
+    mr.eval("""var f = function(args) {
+        return args;
+    }""")
     assert mr.call("f", now, encoder=CustomEncoder) == now.isoformat()
 
     assert_no_v8_objects(mr)

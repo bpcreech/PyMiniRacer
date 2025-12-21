@@ -87,7 +87,7 @@ def _generate_readme() -> str:
                 .read_text(encoding="utf-8")
                 .splitlines()[1:]
             ).replace("\n## ", "\n### "),
-        ],
+        ]
     )
 
 

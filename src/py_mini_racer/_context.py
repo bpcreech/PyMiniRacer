@@ -1,21 +1,11 @@
 from __future__ import annotations
 
-from asyncio import (
-    FIRST_COMPLETED,
-    Task,
-    create_task,
-    get_running_loop,
-    wait,
-)
+from asyncio import FIRST_COMPLETED, Task, create_task, get_running_loop, wait
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
 from itertools import count
 from traceback import format_exc
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 
 from py_mini_racer._abstract_context import AbstractContext
 from py_mini_racer._dll import init_mini_racer, mr_callback_func
@@ -30,10 +20,7 @@ from py_mini_racer._types import (
     JSUndefinedType,
     PythonJSConvertedTypes,
 )
-from py_mini_racer._value_handle import (
-    ValueHandle,
-    python_to_value_handle,
-)
+from py_mini_racer._value_handle import ValueHandle, python_to_value_handle
 
 if TYPE_CHECKING:
     import ctypes
@@ -55,12 +42,10 @@ def context_count() -> int:
 
 class _CallbackRegistry:
     def __init__(
-        self,
-        raw_handle_wrapper: Callable[[RawValueHandleType], AbstractValueHandle],
+        self, raw_handle_wrapper: Callable[[RawValueHandleType], AbstractValueHandle]
     ) -> None:
         self._active_callbacks: dict[
-            int,
-            Callable[[PythonJSConvertedTypes | JSEvalException], None],
+            int, Callable[[PythonJSConvertedTypes | JSEvalException], None]
         ] = {}
 
         # define an all-purpose callback:
@@ -75,8 +60,7 @@ class _CallbackRegistry:
         self._next_callback_id = count()
 
     def register(
-        self,
-        func: Callable[[PythonJSConvertedTypes | JSEvalException], None],
+        self, func: Callable[[PythonJSConvertedTypes | JSEvalException], None]
     ) -> int:
         callback_id = next(self._next_callback_id)
 
@@ -91,10 +75,7 @@ class _CallbackRegistry:
 class Context(AbstractContext):
     """Wrapper for all operations involving the DLL and C++ MiniRacer::Context."""
 
-    def __init__(
-        self,
-        dll: ctypes.CDLL,
-    ) -> None:
+    def __init__(self, dll: ctypes.CDLL) -> None:
         self._dll: ctypes.CDLL | None = dll
 
         self._callback_registry = _CallbackRegistry(self._wrap_raw_handle)
@@ -116,33 +97,24 @@ class Context(AbstractContext):
         return bool(self._get_dll().mr_v8_is_using_sandbox())
 
     def evaluate(
-        self,
-        code: str,
-        timeout_sec: float | None = None,
+        self, code: str, timeout_sec: float | None = None
     ) -> PythonJSConvertedTypes:
         code_handle = python_to_value_handle(self, code)
 
         with self._run_mr_task(
-            self._get_dll().mr_eval,
-            self._ctx,
-            code_handle.raw,
+            self._get_dll().mr_eval, self._ctx, code_handle.raw
         ) as future:
             return future.get(timeout=timeout_sec)
 
     def promise_then(
-        self,
-        promise: JSPromise,
-        on_resolved: JSFunction,
-        on_rejected: JSFunction,
+        self, promise: JSPromise, on_resolved: JSFunction, on_rejected: JSFunction
     ) -> None:
         promise_handle = python_to_value_handle(self, promise)
         then_name_handle = python_to_value_handle(self, "then")
         then_func = self._wrap_raw_handle(
             self._get_dll().mr_get_object_item(
-                self._ctx,
-                promise_handle.raw,
-                then_name_handle.raw,
-            ),
+                self._ctx, promise_handle.raw, then_name_handle.raw
+            )
         ).to_python_or_raise()
 
         then_func = cast("JSFunction", then_func)
@@ -151,45 +123,39 @@ class Context(AbstractContext):
     def get_identity_hash(self, obj: JSObject) -> int:
         obj_handle = python_to_value_handle(self, obj)
 
-        ret = self._wrap_raw_handle(
-            self._get_dll().mr_get_identity_hash(self._ctx, obj_handle.raw),
-        ).to_python_or_raise()
-        return cast("int", ret)
+        return cast(
+            "int",
+            self._wrap_raw_handle(
+                self._get_dll().mr_get_identity_hash(self._ctx, obj_handle.raw)
+            ).to_python_or_raise(),
+        )
 
     def get_own_property_names(
-        self,
-        obj: JSObject,
+        self, obj: JSObject
     ) -> tuple[PythonJSConvertedTypes, ...]:
         obj_handle = python_to_value_handle(self, obj)
 
         names = self._wrap_raw_handle(
-            self._get_dll().mr_get_own_property_names(self._ctx, obj_handle.raw),
+            self._get_dll().mr_get_own_property_names(self._ctx, obj_handle.raw)
         ).to_python_or_raise()
         if not isinstance(names, JSArray):
             raise TypeError
         return tuple(names)
 
     def get_object_item(
-        self,
-        obj: JSObject,
-        key: PythonJSConvertedTypes,
+        self, obj: JSObject, key: PythonJSConvertedTypes
     ) -> PythonJSConvertedTypes:
         obj_handle = python_to_value_handle(self, obj)
         key_handle = python_to_value_handle(self, key)
 
         return self._wrap_raw_handle(
             self._get_dll().mr_get_object_item(
-                self._ctx,
-                obj_handle.raw,
-                key_handle.raw,
-            ),
+                self._ctx, obj_handle.raw, key_handle.raw
+            )
         ).to_python_or_raise()
 
     def set_object_item(
-        self,
-        obj: JSObject,
-        key: PythonJSConvertedTypes,
-        val: PythonJSConvertedTypes,
+        self, obj: JSObject, key: PythonJSConvertedTypes, val: PythonJSConvertedTypes
     ) -> None:
         obj_handle = python_to_value_handle(self, obj)
         key_handle = python_to_value_handle(self, key)
@@ -198,11 +164,8 @@ class Context(AbstractContext):
         # Convert the value just to convert any exceptions (and GC the result)
         self._wrap_raw_handle(
             self._get_dll().mr_set_object_item(
-                self._ctx,
-                obj_handle.raw,
-                key_handle.raw,
-                val_handle.raw,
-            ),
+                self._ctx, obj_handle.raw, key_handle.raw, val_handle.raw
+            )
         ).to_python_or_raise()
 
     def del_object_item(self, obj: JSObject, key: PythonJSConvertedTypes) -> None:
@@ -212,10 +175,8 @@ class Context(AbstractContext):
         # Convert the value just to convert any exceptions (and GC the result)
         self._wrap_raw_handle(
             self._get_dll().mr_del_object_item(
-                self._ctx,
-                obj_handle.raw,
-                key_handle.raw,
-            ),
+                self._ctx, obj_handle.raw, key_handle.raw
+            )
         ).to_python_or_raise()
 
     def del_from_array(self, arr: JSArray, index: int) -> None:
@@ -223,14 +184,11 @@ class Context(AbstractContext):
 
         # Convert the value just to convert any exceptions (and GC the result)
         self._wrap_raw_handle(
-            self._get_dll().mr_splice_array(self._ctx, arr_handle.raw, index, 1, None),
+            self._get_dll().mr_splice_array(self._ctx, arr_handle.raw, index, 1, None)
         ).to_python_or_raise()
 
     def array_insert(
-        self,
-        arr: JSArray,
-        index: int,
-        new_val: PythonJSConvertedTypes,
+        self, arr: JSArray, index: int, new_val: PythonJSConvertedTypes
     ) -> None:
         arr_handle = python_to_value_handle(self, arr)
         new_val_handle = python_to_value_handle(self, new_val)
@@ -238,12 +196,8 @@ class Context(AbstractContext):
         # Convert the value just to convert any exceptions (and GC the result)
         self._wrap_raw_handle(
             self._get_dll().mr_splice_array(
-                self._ctx,
-                arr_handle.raw,
-                index,
-                0,
-                new_val_handle.raw,
-            ),
+                self._ctx, arr_handle.raw, index, 0, new_val_handle.raw
+            )
         ).to_python_or_raise()
 
     def call_function(
@@ -301,9 +255,8 @@ class Context(AbstractContext):
         return int(self._get_dll().mr_value_count(self._ctx))
 
     @contextmanager
-    def js_callback(
-        self,
-        func: Callable[[PythonJSConvertedTypes | JSEvalException], None],
+    def js_to_py_callback(
+        self, func: Callable[[PythonJSConvertedTypes | JSEvalException], None]
     ) -> Iterator[JSFunction]:
         """Make a JS callback which forwards to the given Python function.
 
@@ -316,11 +269,10 @@ class Context(AbstractContext):
         callback_id = self._callback_registry.register(func)
 
         cb = self._wrap_raw_handle(
-            self._get_dll().mr_make_js_callback(self._ctx, callback_id),
+            self._get_dll().mr_make_js_callback(self._ctx, callback_id)
         )
-        cb_py = cast("JSFunction", cb.to_python_or_raise())
 
-        yield cb_py
+        yield cast("JSFunction", cb.to_python_or_raise())
 
         self._callback_registry.cleanup(callback_id)
 
@@ -329,31 +281,18 @@ class Context(AbstractContext):
 
     def create_intish_val(self, val: int, typ: int) -> AbstractValueHandle:
         return self._wrap_raw_handle(
-            self._get_dll().mr_alloc_int_val(
-                self._ctx,
-                val,
-                typ,
-            ),
+            self._get_dll().mr_alloc_int_val(self._ctx, val, typ)
         )
 
     def create_doublish_val(self, val: float, typ: int) -> AbstractValueHandle:
         return self._wrap_raw_handle(
-            self._get_dll().mr_alloc_double_val(
-                self._ctx,
-                val,
-                typ,
-            ),
+            self._get_dll().mr_alloc_double_val(self._ctx, val, typ)
         )
 
     def create_string_val(self, val: str, typ: int) -> AbstractValueHandle:
         b = val.encode("utf-8")
         return self._wrap_raw_handle(
-            self._get_dll().mr_alloc_string_val(
-                self._ctx,
-                b,
-                len(b),
-                typ,
-            ),
+            self._get_dll().mr_alloc_string_val(self._ctx, b, len(b), typ)
         )
 
     def free(self, val_handle: AbstractValueHandle) -> None:
@@ -402,10 +341,9 @@ class Context(AbstractContext):
 
     @asynccontextmanager
     async def wrap_py_function(
-        self,
-        func: PyJsFunctionType,
+        self, func: PyJsFunctionType
     ) -> AsyncIterator[JSFunction]:
-        async def run_one(params: JSArray) -> None:
+        async def process_one_call_from_js(params: JSArray) -> None:
             arguments, resolve, reject = params
             arguments = cast("JSArray", arguments)
             resolve = cast("JSFunction", resolve)
@@ -416,42 +354,51 @@ class Context(AbstractContext):
             except Exception:  # noqa: BLE001
                 # Convert this Python exception into a JS exception so we can send it
                 # into JS:
-                s = f"Error running Python function:\n{format_exc()}"
-                err_maker = self.evaluate("s => new Error(s)")
-                err_maker = cast("JSFunction", err_maker)
-                err = err_maker(s)
-                reject(err)
+                err_maker = cast("JSFunction", self.evaluate("s => new Error(s)"))
+                reject(err_maker(f"Error running Python function:\n{format_exc()}"))
 
-        pending: set[Task[PythonJSConvertedTypes | JSEvalException] | Future[bool]] = (
-            set()
-        )
+        tasks_for_processing_calls: set[
+            Task[PythonJSConvertedTypes | JSEvalException] | Future[bool]
+        ] = set()
 
-        def process(params: PythonJSConvertedTypes | JSEvalException) -> None:
+        def handle_one_call_from_js(
+            params: PythonJSConvertedTypes | JSEvalException,
+        ) -> None:
             params = cast("JSArray", params)
 
             # Start a new task to run the new task:
-            task = create_task(run_one(params))
-            pending.add(task)
+            task = create_task(process_one_call_from_js(params))
+            tasks_for_processing_calls.add(task)
 
         loop = get_running_loop()
 
-        def on_called(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            loop.call_soon_threadsafe(process, value)
+        def on_called_from_js(value: PythonJSConvertedTypes | JSEvalException) -> None:
+            loop.call_soon_threadsafe(handle_one_call_from_js, value)
 
-        async def await_pending() -> None:
-            nonlocal pending
-            while pending:
-                done, pending = await wait(pending, return_when=FIRST_COMPLETED)
+        async def process_all_calls() -> None:
+            nonlocal tasks_for_processing_calls
+            while tasks_for_processing_calls:
+                done, tasks_for_processing_calls = await wait(
+                    tasks_for_processing_calls, return_when=FIRST_COMPLETED
+                )
                 for coro in done:
                     await coro
 
         shutdown: Future[bool] = loop.create_future()
-        pending.add(shutdown)
-        pending_awaiter = create_task(await_pending())
+        tasks_for_processing_calls.add(shutdown)
+        process_all_calls_task = create_task(process_all_calls())
         try:
-            with self.js_callback(on_called) as callback:
-                wrapper = self.evaluate(
-                    """
+            with self.js_to_py_callback(on_called_from_js) as js_to_py_callback:
+                # Every time our callback is called, instantiate a JS Promise
+                # and immediately pass its resolution functions into our Python
+                # callback function. While we wait on Python's asyncio loop
+                # to process this call, we can return the Promise to the JS
+                # caller, thus exposing what looks like an ordinary async
+                # function on the JS side of things.
+                wrap_calls_in_js_promises = cast(
+                    "JSFunction",
+                    self.evaluate(
+                        """
 callback => {
     return (...arguments) => {
         let p = Promise.withResolvers();
@@ -461,18 +408,15 @@ callback => {
         return p.promise;
     }
 }
-""",
+"""
+                    ),
                 )
-                wrapper = cast("JSFunction", wrapper)
 
-                wrapped = wrapper(callback)
-                wrapped = cast("JSFunction", wrapped)
-
-                yield wrapped
+                yield cast("JSFunction", wrap_calls_in_js_promises(js_to_py_callback))
         finally:
             # Stop accepting calls:
             shutdown.set_result(True)
-            await pending_awaiter
+            await process_all_calls_task
 
     def close(self) -> None:
         dll, self._dll = self._dll, None

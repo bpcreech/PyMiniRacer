@@ -32,7 +32,7 @@ var a = {
     null: "null_value",
 };
 a
-""",
+"""
         ),
     )
 
@@ -66,7 +66,7 @@ var a = {
     null: "null_value",
 };
 a
-""",
+"""
     )
     assert obj == obj2
 
@@ -74,7 +74,7 @@ a
         """\
 var a = {};
 a
-""",
+"""
     )
     assert not obj3
 
@@ -90,7 +90,7 @@ def test_object_mutation() -> None:
             """\
 var a = {};
 a
-""",
+"""
         ),
     )
 
@@ -122,7 +122,7 @@ a
         """\
 var b = {"k": "v"};
 b
-""",
+"""
     )
     obj["inner"] = inner_obj
     assert len(obj) == 3  # noqa: PLR2004
@@ -142,7 +142,7 @@ var proto = { 5: "key_is_number", "key_is_string": 42 };
 var a = Object.create(proto);
 a.foo = "bar";
 a
-""",
+"""
         ),
     )
     assert sorted(obj.items(), key=lambda x: str(x[0])) == [
@@ -161,7 +161,7 @@ def test_array() -> None:
         """\
 var a = [ "some_string", 42, undefined, null ];
 a
-""",
+"""
     )
 
     assert isinstance(obj, JSArray)
@@ -190,7 +190,7 @@ a
         """\
 var a = [];
 a
-""",
+"""
     )
     assert not obj2
 
@@ -206,7 +206,7 @@ def test_array_mutation() -> None:
             """\
 var a = [];
 a
-""",
+"""
         ),
     )
 
@@ -232,7 +232,7 @@ a
         """\
 var b = {"k": "v"};
 b
-""",
+"""
     )
     obj.append(inner_obj)
     assert len(obj) == 3  # noqa: PLR2004
@@ -248,7 +248,7 @@ def test_function() -> None:
         """\
 function foo() {};
 foo
-""",
+"""
     )
 
     assert isinstance(obj, JSFunction)
@@ -265,7 +265,7 @@ def test_symbol() -> None:
         """\
 var sym = Symbol("foo");
 sym
-""",
+"""
     )
 
     assert isinstance(obj, JSSymbol)
@@ -282,7 +282,7 @@ def test_promise() -> None:
         """\
 var p = Promise.resolve(42);
 p
-""",
+"""
     )
 
     assert isinstance(promise, JSPromise)
@@ -307,7 +307,7 @@ var a = {
     "some_symbol": Symbol("sym"),
 };
 a
-""",
+"""
         ),
     )
 

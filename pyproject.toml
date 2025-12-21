@@ -38,10 +38,12 @@ per-file-ignores = { "tests/*" = ["S101"] }
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
+split-on-trailing-comma = false
 
 [tool.ruff.format]
 # Enable reformatting of code snippets in docstrings.
 docstring-code-format = true
+skip-magic-trailing-comma = true
 
 [tool.coverage.run]
 omit = [
