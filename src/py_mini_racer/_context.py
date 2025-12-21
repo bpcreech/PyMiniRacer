@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import FIRST_COMPLETED, Task, create_task, get_running_loop, wait
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Generator, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
 from itertools import count
 from traceback import format_exc
@@ -59,17 +59,18 @@ class _CallbackRegistry:
 
         self._next_callback_id = count()
 
+    @contextmanager
     def register(
         self, func: Callable[[PythonJSConvertedTypes | JSEvalException], None]
-    ) -> int:
+    ) -> Generator[int, None, None]:
         callback_id = next(self._next_callback_id)
 
         self._active_callbacks[callback_id] = func
 
-        return callback_id
-
-    def cleanup(self, callback_id: int) -> None:
-        self._active_callbacks.pop(callback_id)
+        try:
+            yield callback_id
+        finally:
+            self._active_callbacks.pop(callback_id)
 
 
 class Context(AbstractContext):
@@ -266,15 +267,12 @@ class Context(AbstractContext):
         future.
         """
 
-        callback_id = self._callback_registry.register(func)
+        with self._callback_registry.register(func) as callback_id:
+            cb = self._wrap_raw_handle(
+                self._get_dll().mr_make_js_callback(self._ctx, callback_id)
+            )
 
-        cb = self._wrap_raw_handle(
-            self._get_dll().mr_make_js_callback(self._ctx, callback_id)
-        )
-
-        yield cast("JSFunction", cb.to_python_or_raise())
-
-        self._callback_registry.cleanup(callback_id)
+            yield cast("JSFunction", cb.to_python_or_raise())
 
     def _wrap_raw_handle(self, raw: RawValueHandleType) -> ValueHandle:
         return ValueHandle(self, raw)
@@ -320,24 +318,21 @@ class Context(AbstractContext):
             else:
                 future.set_result(value)
 
-        callback_id = self._callback_registry.register(callback)
+        with self._callback_registry.register(callback) as callback_id:
+            # Start the task:
+            task_id = dll_method(*args, callback_id)
+            try:
+                # Let the caller handle waiting on the result:
+                yield future
+            finally:
+                # Cancel the task if it's not already done (this call is ignored if it's
+                # already done)
+                self._get_dll().mr_cancel_task(self._ctx, task_id)
 
-        # Start the task:
-        task_id = dll_method(*args, callback_id)
-        try:
-            # Let the caller handle waiting on the result:
-            yield future
-        finally:
-            # Cancel the task if it's not already done (this call is ignored if it's
-            # already done)
-            self._get_dll().mr_cancel_task(self._ctx, task_id)
-
-            # If the caller gives up on waiting, let's at least await the
-            # cancelation error for GC purposes:
-            with suppress(Exception):
-                future.get()
-
-            self._callback_registry.cleanup(callback_id)
+                # If the caller gives up on waiting, let's at least await the
+                # cancelation error for GC purposes:
+                with suppress(Exception):
+                    future.get()
 
     @asynccontextmanager
     async def wrap_py_function(
