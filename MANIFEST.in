@@ -2,3 +2,4 @@ include HISTORY.md
 include src/py_mini_racer/icudtl.dat
 include src/py_mini_racer/*.so
 include src/py_mini_racer/*.dll
+include src/py_mini_racer/*.dylib

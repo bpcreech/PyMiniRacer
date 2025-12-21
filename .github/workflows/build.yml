@@ -280,12 +280,15 @@ jobs:
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
-        merge-multiple: true
+        path: artifacts
+
+    - name: List artifacts
+      run: find artifacts/
 
     - name: Make dist directory
-      run: mkdir dist && cp wheels/* sdist/* dist/
+      run: mkdir dist && cp artifacts/wheels-*/*.whl artifacts/sdist/* dist/
 
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
