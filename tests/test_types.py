@@ -118,7 +118,7 @@ def test_complex() -> None:
                 {"z": [4, 5, 6, {"eqewr": 1, "zxczxc": "qweqwe", "z": {"1": 2}}]},
             ],
             "qwe": 1,
-        },
+        }
     )
 
 

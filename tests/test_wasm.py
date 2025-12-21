@@ -23,7 +23,7 @@ def test_add() -> None:
             f"""
     const moduleRaw = new SharedArrayBuffer({size});
     moduleRaw
-    """,
+    """
         ),
     )
 
@@ -38,7 +38,7 @@ def test_add() -> None:
     WebAssembly.instantiate(new Uint8Array(moduleRaw)).then(result => {
         res = result.instance;
     }).catch(result => { res = result.message; });
-    """,
+    """
     )
 
     # 4. Wait for WASM module instantiation

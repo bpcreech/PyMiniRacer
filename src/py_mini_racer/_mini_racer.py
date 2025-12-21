@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import json
 from json import JSONEncoder
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from py_mini_racer._context import Context
 from py_mini_racer._dll import init_mini_racer
@@ -195,8 +191,7 @@ class MiniRacer:
         return self.execute(js, timeout_sec=timeout_sec, max_memory=max_memory)
 
     def wrap_py_function(
-        self,
-        func: PyJsFunctionType,
+        self, func: PyJsFunctionType
     ) -> AbstractAsyncContextManager[JSFunction]:
         """Wrap a Python function such that it can be called from JS.
 

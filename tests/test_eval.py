@@ -102,9 +102,7 @@ def test_multiple_ctx() -> None:
 def test_exception_thrown() -> None:
     mr = MiniRacer()
 
-    js_source = "var f = function() {throw new Error('blah')};"
-
-    mr.eval(js_source)
+    mr.eval("var f = function() {throw new Error('blah')};")
 
     with pytest.raises(JSEvalException) as exc_info:
         mr.eval("f()")
@@ -129,9 +127,7 @@ Error: blah
 def test_string_thrown() -> None:
     mr = MiniRacer()
 
-    js_source = "var f = function() {throw 'blah'};"
-
-    mr.eval(js_source)
+    mr.eval("var f = function() {throw 'blah'};")
 
     with pytest.raises(JSEvalException) as exc_info:
         mr.eval("f()")
@@ -153,10 +149,9 @@ var f = function() {throw 'blah'};
 
 def test_cannot_parse() -> None:
     mr = MiniRacer()
-    js_source = "var f = function("
 
     with pytest.raises(JSParseException) as exc_info:
-        mr.eval(js_source)
+        mr.eval("var f = function(")
 
     assert (
         exc_info.value.args[0]
@@ -239,7 +234,7 @@ while(true) {
     n.fill(0);
     a = a.concat(n);
 }
-""",
+"""
         )
 
     assert mr.was_soft_memory_limit_reached()
@@ -264,7 +259,7 @@ while(true) {
     let n = new Array(Math.floor(s));
     n.fill(0);
     a = a.concat(n);
-}""",
+}"""
         )
 
     assert not mr.was_soft_memory_limit_reached()
@@ -328,7 +323,7 @@ var done = false;
 p.then(() => {done = true});
 
 done
-""",
+"""
     )
     assert mr.eval("done")
 
@@ -348,7 +343,7 @@ async function foo() {
     done = true;
 }
 foo();
-""",
+"""
     )
 
     assert not mr.eval("done")
@@ -367,7 +362,7 @@ def test_polling() -> None:
 var done = false;
 setTimeout(() => { done = true; }, 1000);
 done
-""",
+"""
     )
     assert not mr.eval("done")
     start = time()
@@ -388,7 +383,7 @@ let b = setTimeout(() => { results.push("b"); }, 3000);
 let c = setTimeout(() => { results.push("c"); }, 1000);
 let d = setTimeout(() => { results.push("d"); }, 4000);
 clearTimeout(b)
-""",
+"""
     )
     start = time()
     while (
@@ -410,7 +405,7 @@ def test_promise_sync() -> None:
         mr.eval(
             """
 new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
-""",
+"""
         ),
     )
     start = time()
@@ -431,7 +426,7 @@ def test_promise_async() -> None:
             mr.eval(
                 """
 new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
-""",
+"""
             ),
         )
         start = time()

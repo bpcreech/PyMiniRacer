@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import ctypes
 from datetime import datetime, timezone
-from typing import (
-    TYPE_CHECKING,
-    ClassVar,
-)
+from typing import TYPE_CHECKING, ClassVar
 
 from py_mini_racer._abstract_context import AbstractContext, AbstractValueHandle
 from py_mini_racer._exc import JSEvalException, MiniRacerBaseException
@@ -17,10 +14,7 @@ from py_mini_racer._objects import (
     JSPromiseImpl,
     JSSymbolImpl,
 )
-from py_mini_racer._types import (
-    JSUndefined,
-    PythonJSConvertedTypes,
-)
+from py_mini_racer._types import JSUndefined, PythonJSConvertedTypes
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -130,10 +124,7 @@ _ERRORS: dict[int, tuple[type[JSEvalException], str]] = {
         JSTerminatedException,
         "JavaScript was terminated",
     ),
-    MiniRacerTypes.key_exception: (
-        JSKeyError,
-        "No such key found in object",
-    ),
+    MiniRacerTypes.key_exception: (JSKeyError, "No such key found in object"),
     MiniRacerTypes.value_exception: (
         JSValueError,
         "Bad value passed to JavaScript engine",
@@ -187,10 +178,7 @@ class ValueHandle(AbstractValueHandle):
         if error_info:
             klass, generic_msg = error_info
 
-            msg = val.bytes_val[0:length].decode("utf-8")
-            msg = msg or generic_msg
-
-            return klass(msg)
+            return klass(val.bytes_val[0:length].decode("utf-8") or generic_msg)
 
         if typ == MiniRacerTypes.null:
             return None
@@ -269,8 +257,7 @@ def python_to_value_handle(  # noqa: PLR0911
     if isinstance(obj, datetime):
         # JS timestamps are milliseconds. In Python we are in seconds:
         return context.create_doublish_val(
-            obj.timestamp() * 1000.0,
-            MiniRacerTypes.date,
+            obj.timestamp() * 1000.0, MiniRacerTypes.date
         )
 
     # Note: we skip shared array buffers, so for now at least, handles to shared

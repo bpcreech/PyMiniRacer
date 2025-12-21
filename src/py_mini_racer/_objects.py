@@ -42,11 +42,7 @@ def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
 class JSObjectImpl(JSObject):
     """A JavaScript object."""
 
-    def __init__(
-        self,
-        ctx: AbstractContext,
-        handle: AbstractValueHandle,
-    ) -> None:
+    def __init__(self, ctx: AbstractContext, handle: AbstractValueHandle) -> None:
         self._ctx = ctx
         self._handle = handle
 
@@ -73,9 +69,7 @@ class JSMappedObjectImpl(JSObjectImpl, JSMappedObject):
         return self._ctx.get_object_item(self, key)
 
     def __setitem__(
-        self,
-        key: PythonJSConvertedTypes,
-        val: PythonJSConvertedTypes,
+        self, key: PythonJSConvertedTypes, val: PythonJSConvertedTypes
     ) -> None:
         self._ctx.set_object_item(self, key, val)
 
@@ -96,8 +90,7 @@ class JSArrayImpl(JSArray, JSObjectImpl):
     """
 
     def __len__(self) -> int:
-        ret = self._ctx.get_object_item(self, "length")
-        return cast("int", ret)
+        return cast("int", self._ctx.get_object_item(self, "length"))
 
     def __getitem__(self, index: int | slice) -> Any:  # noqa: ANN401
         if not isinstance(index, int):
@@ -185,8 +178,7 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
 
         self._attach_callbacks_to_promise(future_caller)
 
-        results = future.get(timeout=timeout)
-        return self._unpack_promise_results(results)
+        return self._unpack_promise_results(future.get(timeout=timeout))
 
     def __await__(self) -> Generator[Any, None, Any]:
         return self._do_await().__await__()
@@ -200,12 +192,10 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
 
         self._attach_callbacks_to_promise(future_caller)
 
-        results = await future
-        return self._unpack_promise_results(results)
+        return self._unpack_promise_results(await future)
 
     def _attach_callbacks_to_promise(
-        self,
-        future_caller: Callable[[Any], None],
+        self, future_caller: Callable[[Any], None]
     ) -> None:
         """Attach the given Python callbacks to a JS Promise."""
 
@@ -217,21 +207,21 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
             exit_stack.__exit__(None, None, None)
             future_caller([False, cast("JSArray", value)])
 
-        on_resolved_js_func = exit_stack.enter_context(
-            self._ctx.js_callback(on_resolved_and_cleanup),
-        )
-
         def on_rejected_and_cleanup(
             value: PythonJSConvertedTypes | JSEvalException,
         ) -> None:
             exit_stack.__exit__(None, None, None)
             future_caller([True, cast("JSArray", value)])
 
-        on_rejected_js_func = exit_stack.enter_context(
-            self._ctx.js_callback(on_rejected_and_cleanup),
+        self._ctx.promise_then(
+            self,
+            exit_stack.enter_context(
+                self._ctx.js_to_py_callback(on_resolved_and_cleanup)
+            ),
+            exit_stack.enter_context(
+                self._ctx.js_to_py_callback(on_rejected_and_cleanup)
+            ),
         )
-
-        self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
 
     def _unpack_promise_results(self, results: Any) -> PythonJSConvertedTypes:  # noqa: ANN401
         is_rejected, argv = results

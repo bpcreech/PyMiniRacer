@@ -168,7 +168,7 @@ solutions = [
     "custom_vars": {},
   },
 ]
-""",
+"""
         )
 
     run(

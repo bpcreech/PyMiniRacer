@@ -10,11 +10,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import pytest
 
-from py_mini_racer import (
-    JSPromise,
-    JSPromiseError,
-    MiniRacer,
-)
+from py_mini_racer import JSPromise, JSPromiseError, MiniRacer
 from tests.gc_check import assert_no_v8_objects
 
 if TYPE_CHECKING:
@@ -68,14 +64,14 @@ def test_exception() -> None:
                 """\
 JavaScript rejected promise with reason: Error: Error running Python function:
 Traceback (most recent call last):
-""",
+"""
             )
 
             assert exc_info.value.args[0].endswith(
                 """\
 
     at <anonymous>:1:6
-""",
+"""
             )
 
     for _ in range(100):
@@ -104,13 +100,7 @@ def test_slow() -> None:
 
             assert await gather(*pending) == ["foobar"] * 100
 
-            assert (
-                data
-                == [
-                    (42,),
-                ]
-                * 100
-            )
+            assert data == [(42,)] * 100
 
     start = time()
     asyncio_run(run())

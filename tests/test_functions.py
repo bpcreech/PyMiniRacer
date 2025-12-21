@@ -6,11 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
-from py_mini_racer import (
-    JSEvalException,
-    JSTimeoutException,
-    MiniRacer,
-)
+from py_mini_racer import JSEvalException, JSTimeoutException, MiniRacer
 from tests.gc_check import assert_no_v8_objects
 
 if TYPE_CHECKING:
@@ -37,7 +33,7 @@ class Thing {
     }
 }
 new Thing('start');
-""",
+"""
         ),
     )
     stuff = cast("JSFunction", thing["stuff"])
@@ -57,7 +53,7 @@ function func(a, b, c) {
     throw new Error('asdf');
 }
 func
-""",
+"""
         ),
     )
 
