@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from py_mini_racer._context import PyJsFunctionType
 from py_mini_racer._dll import (
     DEFAULT_V8_FLAGS,
     LibAlreadyInitializedError,
@@ -23,6 +22,7 @@ from py_mini_racer._types import (
     JSSymbol,
     JSUndefined,
     JSUndefinedType,
+    PyJsFunctionType,
     PythonJSConvertedTypes,
 )
 from py_mini_racer._value_handle import (

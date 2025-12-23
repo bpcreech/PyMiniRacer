@@ -4,10 +4,11 @@ import json
 from json import JSONEncoder
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from py_mini_racer._context import Context, wrap_py_function_as_js_function
+from py_mini_racer._context import Context
 from py_mini_racer._dll import init_mini_racer
 from py_mini_racer._exc import MiniRacerBaseException
 from py_mini_racer._set_timeout import INSTALL_SET_TIMEOUT
+from py_mini_racer._wrap_py_function import wrap_py_function_as_js_function
 
 if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
@@ -15,8 +16,11 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from py_mini_racer._context import PyJsFunctionType
-    from py_mini_racer._types import JSFunction, PythonJSConvertedTypes
+    from py_mini_racer._types import (
+        JSFunction,
+        PyJsFunctionType,
+        PythonJSConvertedTypes,
+    )
 
 
 class WrongReturnTypeException(MiniRacerBaseException):

@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from abc import ABC
-from collections.abc import Generator, MutableMapping, MutableSequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Generator,
+    MutableMapping,
+    MutableSequence,
+)
 from datetime import datetime
 from typing import Any, TypeAlias
 
@@ -100,3 +106,5 @@ PythonJSConvertedTypes: TypeAlias = (
     | JSArray
     | None
 )
+
+PyJsFunctionType = Callable[..., Awaitable[PythonJSConvertedTypes]]

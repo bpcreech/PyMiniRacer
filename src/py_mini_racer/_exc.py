@@ -14,7 +14,7 @@ class JSEvalException(MiniRacerBaseException):
     """JavaScript could not be executed."""
 
 
-class JSTimeoutException(JSEvalException):
+class JSTimeoutException(JSEvalException, TimeoutError):  # noqa: N818
     """JavaScript execution timed out."""
 
     def __init__(self) -> None:
