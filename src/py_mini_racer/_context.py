@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from asyncio import Task, create_task, get_running_loop
-from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
 from concurrent.futures import Future as SyncFuture
 from concurrent.futures import TimeoutError as SyncTimeoutError
-from contextlib import asynccontextmanager, contextmanager, suppress
-from dataclasses import dataclass, field
+from contextlib import contextmanager, suppress
 from itertools import count
-from traceback import format_exc
 from typing import TYPE_CHECKING, Any, cast
 
 from py_mini_racer._abstract_context import AbstractContext
@@ -26,11 +22,10 @@ from py_mini_racer._value_handle import ValueHandle, python_to_value_handle
 
 if TYPE_CHECKING:
     import ctypes
+    from collections.abc import Callable, Generator, Iterator
 
     from py_mini_racer._abstract_context import AbstractValueHandle
     from py_mini_racer._value_handle import RawValueHandleType
-
-PyJsFunctionType = Callable[..., Awaitable[PythonJSConvertedTypes]]
 
 
 def context_count() -> int:
@@ -351,86 +346,3 @@ class Context(AbstractContext):
 
     def __del__(self) -> None:
         self.close()
-
-
-@asynccontextmanager
-async def wrap_py_function_as_js_function(
-    context: Context, func: PyJsFunctionType
-) -> AsyncGenerator[JSFunction, None]:
-    js_to_py_callback_processor = _JsToPyCallbackProcessor(func, context)
-
-    loop = get_running_loop()
-
-    def on_called_from_js(value: PythonJSConvertedTypes | JSEvalException) -> None:
-        loop.call_soon_threadsafe(
-            js_to_py_callback_processor.process_one_invocation_from_js, value
-        )
-
-    with context.js_to_py_callback(on_called_from_js) as js_to_py_callback:
-        # Every time our callback is called from JS, on the JS side we
-        # instantiate a JS Promise and immediately pass its resolution functions
-        # into our Python callback function. While we wait on Python's asyncio
-        # loop to process this call, we can return the Promise to the JS caller,
-        # thus exposing what looks like an ordinary async function on the JS
-        # side of things.
-        wrap_outbound_calls_with_js_promises = cast(
-            "JSFunction",
-            context.evaluate(
-                """
-fn => {
-    return (...arguments) => {
-        let p = Promise.withResolvers();
-
-        fn(arguments, p.resolve, p.reject);
-
-        return p.promise;
-    }
-}
-"""
-            ),
-        )
-
-        yield cast(
-            "JSFunction", wrap_outbound_calls_with_js_promises(js_to_py_callback)
-        )
-
-
-@dataclass(frozen=True)
-class _JsToPyCallbackProcessor:
-    """Processes incoming calls from JS into Python.
-
-    Note that this is not thread-safe and is thus suitable for use with only one asyncio
-    loop."""
-
-    _py_func: PyJsFunctionType
-    _context: Context
-    _ongoing_callbacks: set[Task[PythonJSConvertedTypes | JSEvalException]] = field(
-        default_factory=set
-    )
-
-    def process_one_invocation_from_js(
-        self, params: PythonJSConvertedTypes | JSEvalException
-    ) -> None:
-        arguments, resolve, reject = cast("JSArray", params)
-        arguments = cast("JSArray", arguments)
-        resolve = cast("JSFunction", resolve)
-        reject = cast("JSFunction", reject)
-
-        async def await_into_js_promise_resolvers() -> None:
-            try:
-                result = await self._py_func(*arguments)
-                resolve(result)
-            except Exception:  # noqa: BLE001
-                # Convert this Python exception into a JS exception so we can send
-                # it into JS:
-                err_maker = cast(
-                    "JSFunction", self._context.evaluate("s => new Error(s)")
-                )
-                reject(err_maker(f"Error running Python function:\n{format_exc()}"))
-
-        # Start a new task to await this invocation:
-        task = create_task(await_into_js_promise_resolvers())
-
-        self._ongoing_callbacks.add(task)
-
-        task.add_done_callback(self._ongoing_callbacks.discard)

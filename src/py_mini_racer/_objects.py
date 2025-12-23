@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from asyncio import get_running_loop
 from concurrent.futures import Future as SyncFuture
-from contextlib import contextmanager
 from operator import index as op_index
 from typing import TYPE_CHECKING, Any, cast
 
@@ -20,10 +19,11 @@ from py_mini_racer._types import (
     JSUndefinedType,
     PythonJSConvertedTypes,
 )
+from py_mini_racer._wrap_py_function import wrap_py_function_as_js_function
 
 if TYPE_CHECKING:
     from asyncio import Future
-    from collections.abc import Callable, Generator, Iterator
+    from collections.abc import Generator, Iterator
 
     from py_mini_racer._abstract_context import AbstractContext, AbstractValueHandle
     from py_mini_racer._exc import JSEvalException
@@ -171,56 +171,55 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
                 This is deprecated; use timeout_sec instead.
         """
 
-        future: SyncFuture[PythonJSConvertedTypes] = SyncFuture()
+        future: SyncFuture[JSArray] = SyncFuture()
+        is_rejected = False
 
-        def future_caller(value: PythonJSConvertedTypes) -> None:
-            future.set_result(value)
+        def on_resolved(value: PythonJSConvertedTypes | JSEvalException) -> None:
+            future.set_result(cast("JSArray", value))
 
-        with self._attach_callbacks_to_promise(future_caller):
-            return self._unpack_promise_results(future.result(timeout=timeout))
+        def on_rejected(value: PythonJSConvertedTypes | JSEvalException) -> None:
+            nonlocal is_rejected
+            is_rejected = True
+            future.set_result(cast("JSArray", value))
+
+        with (
+            self._ctx.js_to_py_callback(on_resolved) as on_resolved_js_func,
+            self._ctx.js_to_py_callback(on_rejected) as on_rejected_js_func,
+        ):
+            self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
+
+            result = future.result(timeout=timeout)
+
+        if is_rejected:
+            msg = _get_exception_msg(result[0])
+            raise JSPromiseError(msg)
+
+        return result[0]
 
     def __await__(self) -> Generator[Any, None, Any]:
         return self._do_await().__await__()
 
     async def _do_await(self) -> PythonJSConvertedTypes:
-        loop = get_running_loop()
-        future: Future[PythonJSConvertedTypes] = loop.create_future()
+        future: Future[PythonJSConvertedTypes] = get_running_loop().create_future()
 
-        def future_caller(value: PythonJSConvertedTypes) -> None:
-            loop.call_soon_threadsafe(future.set_result, value)
+        async def on_resolved(value: PythonJSConvertedTypes | JSEvalException) -> None:
+            future.set_result(cast("PythonJSConvertedTypes", value))
 
-        with self._attach_callbacks_to_promise(future_caller):
-            return self._unpack_promise_results(await future)
+        async def on_rejected(value: PythonJSConvertedTypes | JSEvalException) -> None:
+            future.set_exception(
+                JSPromiseError(
+                    _get_exception_msg(cast("PythonJSConvertedTypes", value))
+                )
+            )
 
-    @contextmanager
-    def _attach_callbacks_to_promise(
-        self, future_caller: Callable[[Any], None]
-    ) -> Generator[None, None, None]:
-        """Attach the given Python callbacks to a JS Promise."""
-
-        def on_resolved_and_cleanup(
-            value: PythonJSConvertedTypes | JSEvalException,
-        ) -> None:
-            future_caller([False, cast("JSArray", value)])
-
-        def on_rejected_and_cleanup(
-            value: PythonJSConvertedTypes | JSEvalException,
-        ) -> None:
-            future_caller([True, cast("JSArray", value)])
-
-        with (
-            self._ctx.js_to_py_callback(on_resolved_and_cleanup) as on_resolved_js_func,
-            self._ctx.js_to_py_callback(on_rejected_and_cleanup) as on_rejected_js_func,
+        async with (
+            wrap_py_function_as_js_function(
+                self._ctx, on_resolved
+            ) as on_resolved_js_func,
+            wrap_py_function_as_js_function(
+                self._ctx, on_rejected
+            ) as on_rejected_js_func,
         ):
             self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
-            yield
 
-    def _unpack_promise_results(
-        self, results: PythonJSConvertedTypes
-    ) -> PythonJSConvertedTypes:
-        is_rejected, argv = cast("JSArray", results)
-        result = cast("JSArray", argv)[0]
-        if is_rejected:
-            msg = _get_exception_msg(result)
-            raise JSPromiseError(msg)
-        return result
+            return await future
