@@ -34,7 +34,6 @@ from py_mini_racer._value_handle import (
 
 __all__ = [
     "DEFAULT_V8_FLAGS",
-    "AsyncCleanupType",
     "JSArray",
     "JSArrayIndexError",
     "JSEvalException",

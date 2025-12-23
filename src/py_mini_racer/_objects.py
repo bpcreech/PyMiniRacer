@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from asyncio import get_running_loop
-from contextlib import ExitStack
+from concurrent.futures import Future as SyncFuture
+from contextlib import contextmanager
 from operator import index as op_index
 from typing import TYPE_CHECKING, Any, cast
 
 from py_mini_racer._exc import JSArrayIndexError, JSPromiseError
-from py_mini_racer._sync_future import SyncFuture
 from py_mini_racer._types import (
     JSArray,
     JSFunction,
@@ -171,14 +171,13 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
                 This is deprecated; use timeout_sec instead.
         """
 
-        future = SyncFuture()
+        future: SyncFuture[PythonJSConvertedTypes] = SyncFuture()
 
-        def future_caller(value: Any) -> None:  # noqa: ANN401
+        def future_caller(value: PythonJSConvertedTypes) -> None:
             future.set_result(value)
 
-        self._attach_callbacks_to_promise(future_caller)
-
-        return self._unpack_promise_results(future.get(timeout=timeout))
+        with self._attach_callbacks_to_promise(future_caller):
+            return self._unpack_promise_results(future.result(timeout=timeout))
 
     def __await__(self) -> Generator[Any, None, Any]:
         return self._do_await().__await__()
@@ -187,44 +186,39 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
         loop = get_running_loop()
         future: Future[PythonJSConvertedTypes] = loop.create_future()
 
-        def future_caller(value: Any) -> None:  # noqa: ANN401
+        def future_caller(value: PythonJSConvertedTypes) -> None:
             loop.call_soon_threadsafe(future.set_result, value)
 
-        self._attach_callbacks_to_promise(future_caller)
+        with self._attach_callbacks_to_promise(future_caller):
+            return self._unpack_promise_results(await future)
 
-        return self._unpack_promise_results(await future)
-
+    @contextmanager
     def _attach_callbacks_to_promise(
         self, future_caller: Callable[[Any], None]
-    ) -> None:
+    ) -> Generator[None, None, None]:
         """Attach the given Python callbacks to a JS Promise."""
-
-        exit_stack = ExitStack()
 
         def on_resolved_and_cleanup(
             value: PythonJSConvertedTypes | JSEvalException,
         ) -> None:
-            exit_stack.__exit__(None, None, None)
             future_caller([False, cast("JSArray", value)])
 
         def on_rejected_and_cleanup(
             value: PythonJSConvertedTypes | JSEvalException,
         ) -> None:
-            exit_stack.__exit__(None, None, None)
             future_caller([True, cast("JSArray", value)])
 
-        self._ctx.promise_then(
-            self,
-            exit_stack.enter_context(
-                self._ctx.js_to_py_callback(on_resolved_and_cleanup)
-            ),
-            exit_stack.enter_context(
-                self._ctx.js_to_py_callback(on_rejected_and_cleanup)
-            ),
-        )
+        with (
+            self._ctx.js_to_py_callback(on_resolved_and_cleanup) as on_resolved_js_func,
+            self._ctx.js_to_py_callback(on_rejected_and_cleanup) as on_rejected_js_func,
+        ):
+            self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
+            yield
 
-    def _unpack_promise_results(self, results: Any) -> PythonJSConvertedTypes:  # noqa: ANN401
-        is_rejected, argv = results
+    def _unpack_promise_results(
+        self, results: PythonJSConvertedTypes
+    ) -> PythonJSConvertedTypes:
+        is_rejected, argv = cast("JSArray", results)
         result = cast("JSArray", argv)[0]
         if is_rejected:
             msg = _get_exception_msg(result)

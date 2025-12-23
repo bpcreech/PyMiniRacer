@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from asyncio import Task, create_task, get_running_loop
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
+from concurrent.futures import Future as SyncFuture
+from concurrent.futures import TimeoutError as SyncTimeoutError
 from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass, field
 from itertools import count
@@ -10,8 +12,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from py_mini_racer._abstract_context import AbstractContext
 from py_mini_racer._dll import init_mini_racer, mr_callback_func
-from py_mini_racer._exc import JSEvalException
-from py_mini_racer._sync_future import SyncFuture
+from py_mini_racer._exc import JSEvalException, JSTimeoutException
 from py_mini_racer._types import (
     JSArray,
     JSFunction,
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
     from py_mini_racer._value_handle import RawValueHandleType
 
 PyJsFunctionType = Callable[..., Awaitable[PythonJSConvertedTypes]]
-AsyncCleanupType = Callable[[], Awaitable[None]]
 
 
 def context_count() -> int:
@@ -105,7 +105,10 @@ class Context(AbstractContext):
         with self._run_mr_task(
             self._get_dll().mr_eval, self._ctx, code_handle.raw
         ) as future:
-            return future.get(timeout=timeout_sec)
+            try:
+                return future.result(timeout=timeout_sec)
+            except SyncTimeoutError as e:
+                raise JSTimeoutException from e
 
     def promise_then(
         self, promise: JSPromise, on_resolved: JSFunction, on_rejected: JSFunction
@@ -223,7 +226,10 @@ class Context(AbstractContext):
             this_handle.raw,
             argv_handle.raw,
         ) as future:
-            return future.get(timeout=timeout_sec)
+            try:
+                return future.result(timeout=timeout_sec)
+            except SyncTimeoutError as e:
+                raise JSTimeoutException from e
 
     def set_hard_memory_limit(self, limit: int) -> None:
         self._get_dll().mr_set_hard_memory_limit(self._ctx, limit)
@@ -242,13 +248,13 @@ class Context(AbstractContext):
 
     def heap_stats(self) -> str:
         with self._run_mr_task(self._get_dll().mr_heap_stats, self._ctx) as future:
-            return cast("str", future.get())
+            return cast("str", future.result())
 
     def heap_snapshot(self) -> str:
         """Return a snapshot of the V8 isolate heap."""
 
         with self._run_mr_task(self._get_dll().mr_heap_snapshot, self._ctx) as future:
-            return cast("str", future.get())
+            return cast("str", future.result())
 
     def value_count(self) -> int:
         """For tests only: how many value handles are still allocated?"""
@@ -299,7 +305,11 @@ class Context(AbstractContext):
             dll.mr_free_value(self._ctx, val_handle.raw)
 
     @contextmanager
-    def _run_mr_task(self, dll_method: Any, *args: Any) -> Iterator[SyncFuture]:  # noqa: ANN401
+    def _run_mr_task(
+        self,
+        dll_method: Any,  # noqa: ANN401
+        *args: Any,  # noqa: ANN401
+    ) -> Iterator[SyncFuture[PythonJSConvertedTypes]]:
         """Manages those tasks which generate callbacks from the MiniRacer DLL.
 
         Several MiniRacer functions (JS evaluation and 2 heap stats calls) are
@@ -310,7 +320,7 @@ class Context(AbstractContext):
         the right caller, and we manage the lifecycle of the task and task handle.
         """
 
-        future = SyncFuture()
+        future: SyncFuture[PythonJSConvertedTypes] = SyncFuture()
 
         def callback(value: PythonJSConvertedTypes | JSEvalException) -> None:
             if isinstance(value, JSEvalException):
@@ -332,7 +342,7 @@ class Context(AbstractContext):
                 # If the caller gives up on waiting, let's at least await the
                 # cancelation error for GC purposes:
                 with suppress(Exception):
-                    future.get()
+                    future.result()
 
     def close(self) -> None:
         dll, self._dll = self._dll, None
@@ -406,7 +416,7 @@ class _JsToPyCallbackProcessor:
         resolve = cast("JSFunction", resolve)
         reject = cast("JSFunction", reject)
 
-        async def await_into_promise() -> None:
+        async def await_into_js_promise_resolvers() -> None:
             try:
                 result = await self._py_func(*arguments)
                 resolve(result)
@@ -419,7 +429,7 @@ class _JsToPyCallbackProcessor:
                 reject(err_maker(f"Error running Python function:\n{format_exc()}"))
 
         # Start a new task to await this invocation:
-        task = create_task(await_into_promise())
+        task = create_task(await_into_js_promise_resolvers())
 
         self._ongoing_callbacks.add(task)
 
