@@ -4,7 +4,7 @@ import json
 from json import JSONEncoder
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from py_mini_racer._context import Context
+from py_mini_racer._context import Context, wrap_py_function_as_js_function
 from py_mini_racer._dll import init_mini_racer
 from py_mini_racer._exc import MiniRacerBaseException
 from py_mini_racer._set_timeout import INSTALL_SET_TIMEOUT
@@ -211,7 +211,7 @@ class MiniRacer:
             can be passed into MiniRacer and called by JS code.
         """
 
-        return self._ctx.wrap_py_function(func)
+        return wrap_py_function_as_js_function(self._ctx, func)
 
     def set_hard_memory_limit(self, limit: int) -> None:
         """Set a hard memory limit on this V8 isolate.
