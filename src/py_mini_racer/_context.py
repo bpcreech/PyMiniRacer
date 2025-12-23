@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from asyncio import FIRST_COMPLETED, Task, create_task, get_running_loop, wait
-from collections.abc import AsyncIterator, Awaitable, Callable, Generator, Iterator
+from asyncio import Task, create_task, get_running_loop
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
+from dataclasses import dataclass, field
 from itertools import count
 from traceback import format_exc
 from typing import TYPE_CHECKING, Any, cast
@@ -24,7 +25,6 @@ from py_mini_racer._value_handle import ValueHandle, python_to_value_handle
 
 if TYPE_CHECKING:
     import ctypes
-    from asyncio import Future
 
     from py_mini_racer._abstract_context import AbstractValueHandle
     from py_mini_racer._value_handle import RawValueHandleType
@@ -334,85 +334,6 @@ class Context(AbstractContext):
                 with suppress(Exception):
                     future.get()
 
-    @asynccontextmanager
-    async def wrap_py_function(
-        self, func: PyJsFunctionType
-    ) -> AsyncIterator[JSFunction]:
-        async def process_one_call_from_js(params: JSArray) -> None:
-            arguments, resolve, reject = params
-            arguments = cast("JSArray", arguments)
-            resolve = cast("JSFunction", resolve)
-            reject = cast("JSFunction", reject)
-            try:
-                result = await func(*arguments)
-                resolve(result)
-            except Exception:  # noqa: BLE001
-                # Convert this Python exception into a JS exception so we can send it
-                # into JS:
-                err_maker = cast("JSFunction", self.evaluate("s => new Error(s)"))
-                reject(err_maker(f"Error running Python function:\n{format_exc()}"))
-
-        tasks_for_processing_calls: set[
-            Task[PythonJSConvertedTypes | JSEvalException] | Future[bool]
-        ] = set()
-
-        def handle_one_call_from_js(
-            params: PythonJSConvertedTypes | JSEvalException,
-        ) -> None:
-            params = cast("JSArray", params)
-
-            # Start a new task to run the new task:
-            task = create_task(process_one_call_from_js(params))
-            tasks_for_processing_calls.add(task)
-
-        loop = get_running_loop()
-
-        def on_called_from_js(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            loop.call_soon_threadsafe(handle_one_call_from_js, value)
-
-        async def process_all_calls() -> None:
-            nonlocal tasks_for_processing_calls
-            while tasks_for_processing_calls:
-                done, tasks_for_processing_calls = await wait(
-                    tasks_for_processing_calls, return_when=FIRST_COMPLETED
-                )
-                for coro in done:
-                    await coro
-
-        shutdown: Future[bool] = loop.create_future()
-        tasks_for_processing_calls.add(shutdown)
-        process_all_calls_task = create_task(process_all_calls())
-        try:
-            with self.js_to_py_callback(on_called_from_js) as js_to_py_callback:
-                # Every time our callback is called, instantiate a JS Promise
-                # and immediately pass its resolution functions into our Python
-                # callback function. While we wait on Python's asyncio loop
-                # to process this call, we can return the Promise to the JS
-                # caller, thus exposing what looks like an ordinary async
-                # function on the JS side of things.
-                wrap_calls_in_js_promises = cast(
-                    "JSFunction",
-                    self.evaluate(
-                        """
-callback => {
-    return (...arguments) => {
-        let p = Promise.withResolvers();
-
-        callback(arguments, p.resolve, p.reject);
-
-        return p.promise;
-    }
-}
-"""
-                    ),
-                )
-
-                yield cast("JSFunction", wrap_calls_in_js_promises(js_to_py_callback))
-        finally:
-            # Stop accepting calls:
-            shutdown.set_result(True)
-            await process_all_calls_task
-
     def close(self) -> None:
         dll, self._dll = self._dll, None
         if dll:
@@ -420,3 +341,86 @@ callback => {
 
     def __del__(self) -> None:
         self.close()
+
+
+@asynccontextmanager
+async def wrap_py_function_as_js_function(
+    context: Context, func: PyJsFunctionType
+) -> AsyncGenerator[JSFunction, None]:
+    js_to_py_callback_processor = _JsToPyCallbackProcessor(func, context)
+
+    loop = get_running_loop()
+
+    def on_called_from_js(value: PythonJSConvertedTypes | JSEvalException) -> None:
+        loop.call_soon_threadsafe(
+            js_to_py_callback_processor.process_one_invocation_from_js, value
+        )
+
+    with context.js_to_py_callback(on_called_from_js) as js_to_py_callback:
+        # Every time our callback is called from JS, on the JS side we
+        # instantiate a JS Promise and immediately pass its resolution functions
+        # into our Python callback function. While we wait on Python's asyncio
+        # loop to process this call, we can return the Promise to the JS caller,
+        # thus exposing what looks like an ordinary async function on the JS
+        # side of things.
+        wrap_outbound_calls_with_js_promises = cast(
+            "JSFunction",
+            context.evaluate(
+                """
+fn => {
+    return (...arguments) => {
+        let p = Promise.withResolvers();
+
+        fn(arguments, p.resolve, p.reject);
+
+        return p.promise;
+    }
+}
+"""
+            ),
+        )
+
+        yield cast(
+            "JSFunction", wrap_outbound_calls_with_js_promises(js_to_py_callback)
+        )
+
+
+@dataclass(frozen=True)
+class _JsToPyCallbackProcessor:
+    """Processes incoming calls from JS into Python.
+
+    Note that this is not thread-safe and is thus suitable for use with only one asyncio
+    loop."""
+
+    _py_func: PyJsFunctionType
+    _context: Context
+    _ongoing_callbacks: set[Task[PythonJSConvertedTypes | JSEvalException]] = field(
+        default_factory=set
+    )
+
+    def process_one_invocation_from_js(
+        self, params: PythonJSConvertedTypes | JSEvalException
+    ) -> None:
+        arguments, resolve, reject = cast("JSArray", params)
+        arguments = cast("JSArray", arguments)
+        resolve = cast("JSFunction", resolve)
+        reject = cast("JSFunction", reject)
+
+        async def await_into_promise() -> None:
+            try:
+                result = await self._py_func(*arguments)
+                resolve(result)
+            except Exception:  # noqa: BLE001
+                # Convert this Python exception into a JS exception so we can send
+                # it into JS:
+                err_maker = cast(
+                    "JSFunction", self._context.evaluate("s => new Error(s)")
+                )
+                reject(err_maker(f"Error running Python function:\n{format_exc()}"))
+
+        # Start a new task to await this invocation:
+        task = create_task(await_into_promise())
+
+        self._ongoing_callbacks.add(task)
+
+        task.add_done_callback(self._ongoing_callbacks.discard)

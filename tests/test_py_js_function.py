@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from asyncio import gather
+from asyncio import Future, gather
 from asyncio import run as asyncio_run
 from asyncio import sleep as asyncio_sleep
 from time import time
@@ -120,11 +120,17 @@ def test_call_on_exit() -> None:
 
     data = []
 
-    async def append(*args: Any) -> str:  # noqa: ANN401
-        data.append(args)
-        return "foobar"
-
     async def run() -> None:
+        fut: Future[None] = Future()
+
+        async def append(*args: Any) -> str:  # noqa: ANN401
+            data.append(args)
+            fut.set_result(None)
+            # sleep long enough that the test will fail unless this is either
+            # interrupted, or never started to begin with:
+            await asyncio_sleep(10000)
+            return "foobar"
+
         async with mr.wrap_py_function(append) as jsfunc:
             # "Install" our JS function on the global "this" object:
             cast("JSFunction", mr.eval("x => this.func = x"))(jsfunc)
@@ -133,11 +139,8 @@ def test_call_on_exit() -> None:
             # finish it:
             assert isinstance(mr.eval("this.func(42)"), JSPromise)
 
-            # Generally (subject to race conditions) at this point the
-            # callback initiated by the above this.func(42) will be half-received:
-            # _Context.wrap_py_function.on_called will have gotten the callback, and
-            # will have told asyncio to deal with it on the loop thread. We will
-            # generally *not* have yet processed the call.
+            await fut
+
             # After this line, we start tearing down the mr.wrap_py_function context
             # manager, which entails stopping the call processor.
             # Let's make sure we don't fall over ourselves (it's fair to either process

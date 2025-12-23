@@ -134,7 +134,11 @@ _ERRORS: dict[int, tuple[type[JSEvalException], str]] = {
 
 class ValueHandle(AbstractValueHandle):
     """An object which holds open a Python reference to a _RawValue owned by
-    a C++ MiniRacer context."""
+    a C++ MiniRacer context.
+
+    Upon construction, immediately assumes ownership of the handle. To avoid
+    memory leaks, any raw handles received from the MiniRacer DLL should
+    generally be wrapped in a ValueHandle as early as possible."""
 
     def __init__(self, ctx: AbstractContext, raw: RawValueHandleType) -> None:
         self.ctx = ctx
