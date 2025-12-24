@@ -134,6 +134,9 @@ def _build_dll_handle(dll_path: Path) -> ctypes.CDLL:  # noqa: PLR0915
     ]
     handle.mr_splice_array.restype = RawValueHandle
 
+    handle.mr_array_push.argtypes = [ctypes.c_uint64, RawValueHandle, RawValueHandle]
+    handle.mr_array_push.restype = RawValueHandle
+
     handle.mr_call_function.argtypes = [
         ctypes.c_uint64,
         RawValueHandle,

@@ -277,6 +277,29 @@ auto Context::SpliceArray(BinaryValueHandle* obj_handle,
           .get());
 }
 
+auto Context::ArrayPush(BinaryValueHandle* obj_handle,
+                        BinaryValueHandle* new_val_handle)
+    -> BinaryValueHandle* {
+  auto obj_hc = MakeHandleConverter(obj_handle, "Bad handle: obj");
+  if (!obj_hc) {
+    return obj_hc.GetErrorHandle();
+  }
+
+  auto new_val_hc = MakeHandleConverter(new_val_handle, "Bad handle: new_val");
+  if (!new_val_hc) {
+    return new_val_hc.GetErrorHandle();
+  }
+
+  return bv_registry_.Remember(
+      isolate_manager_
+          .Run([this, obj_ptr = obj_hc.GetPtr(),
+                new_val_ptr = new_val_hc.GetPtr()](v8::Isolate* isolate) {
+            return object_manipulator_.Push(isolate, obj_ptr.get(),
+                                            new_val_ptr.get());
+          })
+          .get());
+}
+
 void Context::FreeBinaryValue(BinaryValueHandle* val) {
   bv_registry_.Forget(val);
 }

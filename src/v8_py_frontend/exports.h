@@ -197,6 +197,16 @@ LIB_EXPORT auto mr_splice_array(uint64_t context_id,
                                 MiniRacer::BinaryValueHandle* new_val_handle)
     -> MiniRacer::BinaryValueHandle*;
 
+/** Call JavaScript `Array.prototype.push(array, new_val)`.
+ *
+ * The result of the operation (passed into the callback) is an exception
+ * in case of failure.
+ **/
+LIB_EXPORT auto mr_array_push(uint64_t context_id,
+                              MiniRacer::BinaryValueHandle* array_handle,
+                              MiniRacer::BinaryValueHandle* new_val_handle)
+    -> MiniRacer::BinaryValueHandle*;
+
 /** Cancel the given asynchronous task.
  *
  * (Such tasks are started by mr_eval, mr_call_function, mr_heap_stats, and
