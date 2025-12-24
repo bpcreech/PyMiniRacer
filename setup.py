@@ -16,7 +16,7 @@ def _get_platform_tag() -> str:
     # generally return the first, meaning the most-specific, platform tag:
     tag = next(platform_tags())
 
-    if tag.startswith("macos_"):
+    if tag.startswith("macosx_"):
         # pip seems finicky about platform tags with larger macos versions, so just
         # tell arm64 is 11.0 and everything is is 10.9:
         if tag.endswith("_arm64"):

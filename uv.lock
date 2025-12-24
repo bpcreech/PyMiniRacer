@@ -491,7 +491,7 @@ wheels = [
 
 [[package]]
 name = "mini-racer"
-version = "0.13.0"
+version = "0.13.1"
 source = { editable = "." }
 
 [package.dev-dependencies]

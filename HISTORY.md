@@ -1,5 +1,9 @@
 # History
 
+## 0.13.1 (2025-12-24)
+
+- Fix MacOS wheels to not require MacOS 15.
+
 ## 0.13.0 (2025-12-07)
 
 - Upgrade to V8 14.3 from 12.6.
