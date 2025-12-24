@@ -137,7 +137,7 @@ auto ObjectManipulator::Splice(v8::Isolate* isolate,
   }
 
   if (!splice_val->IsFunction()) {
-    return bv_factory_->New("splice method is not a function",
+    return bv_factory_->New("splice member is not a function",
                             type_execute_exception);
   }
 
@@ -154,6 +154,49 @@ auto ObjectManipulator::Splice(v8::Isolate* isolate,
   }
 
   v8::MaybeLocal<v8::Value> maybe_value = splice_func->Call(
+      local_context, local_obj, static_cast<int>(argv.size()), argv.data());
+  if (maybe_value.IsEmpty()) {
+    return bv_factory_->New(local_context, trycatch.Message(),
+                            trycatch.Exception(), type_execute_exception);
+  }
+
+  return bv_factory_->New(local_context, maybe_value.ToLocalChecked());
+}
+
+auto ObjectManipulator::Push(v8::Isolate* isolate,
+                             BinaryValue* obj_ptr,
+                             BinaryValue* new_val_ptr) -> BinaryValue::Ptr {
+  const v8::Isolate::Scope isolate_scope(isolate);
+  const v8::HandleScope handle_scope(isolate);
+  const v8::Local<v8::Context> local_context = context_->Get()->Get(isolate);
+  const v8::Context::Scope context_scope(local_context);
+
+  const v8::Local<v8::Value> local_obj_val = obj_ptr->ToValue(local_context);
+  const v8::Local<v8::Object> local_obj = local_obj_val.As<v8::Object>();
+
+  // Array.prototype.push doesn't exist in C++ in V8. We have to find the JS
+  // function and call it:
+  const v8::Local<v8::String> push_name =
+      v8::String::NewFromUtf8Literal(isolate, "push");
+
+  v8::Local<v8::Value> push_val;
+  if (!local_obj->Get(local_context, push_name).ToLocal(&push_val)) {
+    return bv_factory_->New("no push method on object", type_execute_exception);
+  }
+
+  if (!push_val->IsFunction()) {
+    return bv_factory_->New("push member is not a function",
+                            type_execute_exception);
+  }
+
+  const v8::Local<v8::Function> push_func = push_val.As<v8::Function>();
+
+  const v8::TryCatch trycatch(isolate);
+
+  std::vector<v8::Local<v8::Value>> argv = {
+      new_val_ptr->ToValue(local_context)};
+
+  v8::MaybeLocal<v8::Value> maybe_value = push_func->Call(
       local_context, local_obj, static_cast<int>(argv.size()), argv.data());
   if (maybe_value.IsEmpty()) {
     return bv_factory_->New(local_context, trycatch.Message(),

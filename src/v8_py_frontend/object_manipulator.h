@@ -38,6 +38,9 @@ class ObjectManipulator {
               int32_t start,
               int32_t delete_count,
               BinaryValue* new_val_ptr) -> BinaryValue::Ptr;
+  auto Push(v8::Isolate* isolate,
+            BinaryValue* obj_ptr,
+            BinaryValue* new_val_ptr) -> BinaryValue::Ptr;
   auto Call(v8::Isolate* isolate,
             BinaryValue* func_ptr,
             BinaryValue* this_ptr,

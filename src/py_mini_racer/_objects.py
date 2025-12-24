@@ -132,7 +132,10 @@ class JSArrayImpl(JSArray, JSObjectImpl):
 
     def __iter__(self) -> Iterator[PythonJSConvertedTypes]:
         for i in range(len(self)):
-            yield self[i]
+            yield self._ctx.get_object_item(self, i)
+
+    def append(self, value: PythonJSConvertedTypes) -> None:
+        self._ctx.array_push(self, value)
 
 
 class JSFunctionImpl(JSMappedObjectImpl, JSFunction):

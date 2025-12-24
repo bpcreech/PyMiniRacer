@@ -249,6 +249,17 @@ LIB_EXPORT auto mr_splice_array(uint64_t context_id,
                               new_val_handle);
 }
 
+LIB_EXPORT auto mr_array_push(uint64_t context_id,
+                              MiniRacer::BinaryValueHandle* array_handle,
+                              MiniRacer::BinaryValueHandle* new_val_handle)
+    -> MiniRacer::BinaryValueHandle* {
+  auto context = GetContext(context_id);
+  if (!context) {
+    return nullptr;
+  }
+  return context->ArrayPush(array_handle, new_val_handle);
+}
+
 LIB_EXPORT auto mr_call_function(uint64_t context_id,
                                  MiniRacer::BinaryValueHandle* func_handle,
                                  MiniRacer::BinaryValueHandle* this_handle,

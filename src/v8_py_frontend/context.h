@@ -60,6 +60,8 @@ class Context {
                    int32_t start,
                    int32_t delete_count,
                    BinaryValueHandle* new_val_handle) -> BinaryValueHandle*;
+  auto ArrayPush(BinaryValueHandle* obj_handle,
+                 BinaryValueHandle* new_val_handle) -> BinaryValueHandle*;
   auto CallFunction(BinaryValueHandle* func_handle,
                     BinaryValueHandle* this_handle,
                     BinaryValueHandle* argv_handle,

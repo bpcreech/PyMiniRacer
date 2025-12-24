@@ -79,6 +79,10 @@ class AbstractContext(ABC):
         pass
 
     @abstractmethod
+    def array_push(self, arr: JSArray, new_val: PythonJSConvertedTypes) -> None:
+        pass
+
+    @abstractmethod
     def call_function(
         self,
         func: JSFunction,

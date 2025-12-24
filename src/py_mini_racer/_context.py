@@ -199,6 +199,15 @@ class Context(AbstractContext):
             )
         ).to_python_or_raise()
 
+    def array_push(self, arr: JSArray, new_val: PythonJSConvertedTypes) -> None:
+        arr_handle = python_to_value_handle(self, arr)
+        new_val_handle = python_to_value_handle(self, new_val)
+
+        # Convert the value just to convert any exceptions (and GC the result)
+        self._wrap_raw_handle(
+            self._get_dll().mr_array_push(self._ctx, arr_handle.raw, new_val_handle.raw)
+        ).to_python_or_raise()
+
     def call_function(
         self,
         func: JSFunction,
