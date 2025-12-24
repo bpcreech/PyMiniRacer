@@ -7,13 +7,12 @@ from importlib import resources
 from pathlib import Path
 from sys import platform
 from threading import Lock
-from typing import TYPE_CHECKING, Protocol, cast
+from typing import TYPE_CHECKING, ClassVar, Protocol, cast
 
 from py_mini_racer._exc import MiniRacerBaseException
-from py_mini_racer._value_handle import RawValueHandle
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
 
     from py_mini_racer._value_handle import RawValueHandleType
 
@@ -30,15 +29,38 @@ def _get_lib_filename(name: str) -> str:
     return prefix + name + ext
 
 
+class _RawValueUnion(ctypes.Union):
+    _fields_: ClassVar[Sequence[tuple[str, type]]] = [
+        ("value_ptr", ctypes.c_void_p),
+        ("bytes_val", ctypes.POINTER(ctypes.c_char)),
+        ("char_p_val", ctypes.c_char_p),
+        ("int_val", ctypes.c_int64),
+        ("double_val", ctypes.c_double),
+    ]
+
+
+class _RawValue(ctypes.Structure):
+    _fields_: ClassVar[Sequence[tuple[str, type]]] = [
+        ("value", _RawValueUnion),
+        ("len", ctypes.c_size_t),
+        ("type", ctypes.c_uint8),
+    ]
+    _pack_ = 1
+
+
+RawValueHandle = ctypes.POINTER(_RawValue)
+
+if TYPE_CHECKING:
+    RawValueHandleTypeImpl = ctypes._Pointer[_RawValue]  # noqa: SLF001
+
+
 MR_CALLBACK = ctypes.CFUNCTYPE(None, ctypes.c_uint64, RawValueHandle)
 
 
-if TYPE_CHECKING:
-
-    class MrCallback(Protocol):
-        def __call__(
-            self, callback_id: int, raw_val_handle: RawValueHandleType
-        ) -> None: ...
+class MrCallback(Protocol):
+    def __call__(
+        self, callback_id: int, raw_val_handle: RawValueHandleType
+    ) -> None: ...
 
 
 class MrCallbackDecorator(Protocol):

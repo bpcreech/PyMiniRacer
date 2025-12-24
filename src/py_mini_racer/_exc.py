@@ -34,3 +34,27 @@ class JSArrayIndexError(IndexError, MiniRacerBaseException):
 
     def __init__(self) -> None:
         super().__init__("JSArray deletion out of range")
+
+
+class JSParseException(JSEvalException):
+    """JavaScript could not be parsed."""
+
+
+class JSKeyError(JSEvalException, KeyError):
+    """No such key found."""
+
+
+class JSOOMException(JSEvalException):
+    """JavaScript execution ran out of memory."""
+
+
+class JSTerminatedException(JSEvalException):
+    """JavaScript execution terminated."""
+
+
+class JSValueError(JSEvalException, ValueError):
+    """Bad value passed to JavaScript engine."""
+
+
+class JSConversionException(MiniRacerBaseException):
+    """Type could not be converted to or from JavaScript."""

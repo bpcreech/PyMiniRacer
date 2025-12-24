@@ -9,8 +9,12 @@ from py_mini_racer._dll import (
 from py_mini_racer._exc import (
     JSArrayIndexError,
     JSEvalException,
+    JSKeyError,
+    JSOOMException,
+    JSParseException,
     JSPromiseError,
     JSTimeoutException,
+    JSValueError,
 )
 from py_mini_racer._mini_racer import MiniRacer, StrictMiniRacer
 from py_mini_racer._types import (
@@ -24,12 +28,6 @@ from py_mini_racer._types import (
     JSUndefinedType,
     PyJsFunctionType,
     PythonJSConvertedTypes,
-)
-from py_mini_racer._value_handle import (
-    JSKeyError,
-    JSOOMException,
-    JSParseException,
-    JSValueError,
 )
 
 __all__ = [

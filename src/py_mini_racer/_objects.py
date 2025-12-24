@@ -25,8 +25,9 @@ if TYPE_CHECKING:
     from asyncio import Future
     from collections.abc import Generator, Iterator
 
-    from py_mini_racer._abstract_context import AbstractContext, AbstractValueHandle
     from py_mini_racer._exc import JSEvalException
+    from py_mini_racer._js_value_manipulator import JSValueManipulator
+    from py_mini_racer._value_handle import ValueHandle
 
 
 def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
@@ -42,15 +43,17 @@ def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
 class JSObjectImpl(JSObject):
     """A JavaScript object."""
 
-    def __init__(self, ctx: AbstractContext, handle: AbstractValueHandle) -> None:
-        self._ctx = ctx
+    def __init__(
+        self, val_manipulator: JSValueManipulator, handle: ValueHandle
+    ) -> None:
+        self._val_manipulator = val_manipulator
         self._handle = handle
 
     def __hash__(self) -> int:
-        return self._ctx.get_identity_hash(self)
+        return self._val_manipulator.get_identity_hash(self)
 
     @property
-    def raw_handle(self) -> AbstractValueHandle:
+    def raw_handle(self) -> ValueHandle:
         return self._handle
 
 
@@ -66,21 +69,21 @@ class JSMappedObjectImpl(JSObjectImpl, JSMappedObject):
         return iter(self._get_own_property_names())
 
     def __getitem__(self, key: PythonJSConvertedTypes) -> PythonJSConvertedTypes:
-        return self._ctx.get_object_item(self, key)
+        return self._val_manipulator.get_object_item(self, key)
 
     def __setitem__(
         self, key: PythonJSConvertedTypes, val: PythonJSConvertedTypes
     ) -> None:
-        self._ctx.set_object_item(self, key, val)
+        self._val_manipulator.set_object_item(self, key, val)
 
     def __delitem__(self, key: PythonJSConvertedTypes) -> None:
-        self._ctx.del_object_item(self, key)
+        self._val_manipulator.del_object_item(self, key)
 
     def __len__(self) -> int:
         return len(self._get_own_property_names())
 
     def _get_own_property_names(self) -> tuple[PythonJSConvertedTypes, ...]:
-        return self._ctx.get_own_property_names(self)
+        return self._val_manipulator.get_own_property_names(self)
 
 
 class JSArrayImpl(JSArray, JSObjectImpl):
@@ -90,7 +93,7 @@ class JSArrayImpl(JSArray, JSObjectImpl):
     """
 
     def __len__(self) -> int:
-        return cast("int", self._ctx.get_object_item(self, "length"))
+        return cast("int", self._val_manipulator.get_object_item(self, "length"))
 
     def __getitem__(self, index: int | slice) -> Any:  # noqa: ANN401
         if not isinstance(index, int):
@@ -101,7 +104,7 @@ class JSArrayImpl(JSArray, JSObjectImpl):
             index += len(self)
 
         if 0 <= index < len(self):
-            return self._ctx.get_object_item(self, index)
+            return self._val_manipulator.get_object_item(self, index)
 
         raise IndexError
 
@@ -109,7 +112,7 @@ class JSArrayImpl(JSArray, JSObjectImpl):
         if not isinstance(index, int):
             raise TypeError
 
-        self._ctx.set_object_item(self, index, val)
+        self._val_manipulator.set_object_item(self, index, val)
 
     def __delitem__(self, index: int | slice) -> None:
         if not isinstance(index, int):
@@ -125,17 +128,17 @@ class JSArrayImpl(JSArray, JSObjectImpl):
             # bounds:
             raise JSArrayIndexError
 
-        self._ctx.del_from_array(self, index)
+        self._val_manipulator.del_from_array(self, index)
 
     def insert(self, index: int, new_obj: PythonJSConvertedTypes) -> None:
-        self._ctx.array_insert(self, index, new_obj)
+        self._val_manipulator.array_insert(self, index, new_obj)
 
     def __iter__(self) -> Iterator[PythonJSConvertedTypes]:
         for i in range(len(self)):
-            yield self._ctx.get_object_item(self, i)
+            yield self._val_manipulator.get_object_item(self, i)
 
     def append(self, value: PythonJSConvertedTypes) -> None:
-        self._ctx.array_push(self, value)
+        self._val_manipulator.array_push(self, value)
 
 
 class JSFunctionImpl(JSMappedObjectImpl, JSFunction):
@@ -151,7 +154,9 @@ class JSFunctionImpl(JSMappedObjectImpl, JSFunction):
         this: JSObject | JSUndefinedType = JSUndefined,
         timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes:
-        return self._ctx.call_function(self, *args, this=this, timeout_sec=timeout_sec)
+        return self._val_manipulator.call_function(
+            self, *args, this=this, timeout_sec=timeout_sec
+        )
 
 
 class JSSymbolImpl(JSMappedObjectImpl, JSSymbol):
@@ -186,10 +191,12 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
             future.set_result(cast("JSArray", value))
 
         with (
-            self._ctx.js_to_py_callback(on_resolved) as on_resolved_js_func,
-            self._ctx.js_to_py_callback(on_rejected) as on_rejected_js_func,
+            self._val_manipulator.js_to_py_callback(on_resolved) as on_resolved_js_func,
+            self._val_manipulator.js_to_py_callback(on_rejected) as on_rejected_js_func,
         ):
-            self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
+            self._val_manipulator.promise_then(
+                self, on_resolved_js_func, on_rejected_js_func
+            )
 
             result = future.result(timeout=timeout)
 
@@ -205,24 +212,22 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
     async def _do_await(self) -> PythonJSConvertedTypes:
         future: Future[PythonJSConvertedTypes] = get_running_loop().create_future()
 
-        async def on_resolved(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            future.set_result(cast("PythonJSConvertedTypes", value))
+        async def on_resolved(value: PythonJSConvertedTypes) -> None:
+            future.set_result(value)
 
-        async def on_rejected(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            future.set_exception(
-                JSPromiseError(
-                    _get_exception_msg(cast("PythonJSConvertedTypes", value))
-                )
-            )
+        async def on_rejected(value: PythonJSConvertedTypes) -> None:
+            future.set_exception(JSPromiseError(_get_exception_msg(value)))
 
         async with (
             wrap_py_function_as_js_function(
-                self._ctx, on_resolved
+                self._val_manipulator, on_resolved
             ) as on_resolved_js_func,
             wrap_py_function_as_js_function(
-                self._ctx, on_rejected
+                self._val_manipulator, on_rejected
             ) as on_rejected_js_func,
         ):
-            self._ctx.promise_then(self, on_resolved_js_func, on_rejected_js_func)
+            self._val_manipulator.promise_then(
+                self, on_resolved_js_func, on_rejected_js_func
+            )
 
             return await future

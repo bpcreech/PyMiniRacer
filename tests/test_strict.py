@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from traceback import clear_frames
-
 import pytest
 
 from py_mini_racer import JSEvalException, JSUndefined, StrictMiniRacer
@@ -54,5 +52,5 @@ def test_message() -> None:
     with pytest.raises(JSEvalException) as exc_info:
         mr.eval("throw new EvalError('Hello', 'someFile.js', 10);")
 
-    clear_frames(exc_info.tb)
+    del exc_info
     assert_no_v8_objects(mr)
