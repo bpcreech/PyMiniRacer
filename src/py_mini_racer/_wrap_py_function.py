@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from py_mini_racer._abstract_context import AbstractContext
     from py_mini_racer._exc import JSEvalException
+    from py_mini_racer._js_value_manipulator import JSValueManipulator
     from py_mini_racer._types import (
         JSArray,
         JSFunction,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 @asynccontextmanager
 async def wrap_py_function_as_js_function(
-    context: AbstractContext, func: PyJsFunctionType
+    context: JSValueManipulator, func: PyJsFunctionType
 ) -> AsyncGenerator[JSFunction, None]:
     with context.js_to_py_callback(
         _JsToPyCallbackProcessor(
@@ -64,7 +64,7 @@ class _JsToPyCallbackProcessor:
     loop."""
 
     _py_func: PyJsFunctionType
-    _context: AbstractContext
+    _val_manipulator: JSValueManipulator
     _loop: asyncio.AbstractEventLoop
     _ongoing_callbacks: set[asyncio.Task[PythonJSConvertedTypes | JSEvalException]] = (
         field(default_factory=set)
@@ -83,7 +83,7 @@ class _JsToPyCallbackProcessor:
                 # Convert this Python exception into a JS exception so we can send
                 # it into JS:
                 err_maker = cast(
-                    "JSFunction", self._context.evaluate("s => new Error(s)")
+                    "JSFunction", self._val_manipulator.evaluate("s => new Error(s)")
                 )
                 reject(err_maker(f"Error running Python function:\n{format_exc()}"))
 

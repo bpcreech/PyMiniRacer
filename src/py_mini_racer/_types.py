@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from abc import ABC
 from collections.abc import (
     Awaitable,
     Callable,
@@ -30,7 +29,7 @@ class JSUndefinedType:
 JSUndefined = JSUndefinedType()
 
 
-class JSObject(ABC):  # noqa: B024
+class JSObject:
     """A JavaScript object."""
 
 
@@ -106,5 +105,6 @@ PythonJSConvertedTypes: TypeAlias = (
     | JSArray
     | None
 )
+
 
 PyJsFunctionType = Callable[..., Awaitable[PythonJSConvertedTypes]]
