@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from asyncio import get_running_loop
-from concurrent.futures import Future as SyncFuture
 from operator import index as op_index
 from typing import TYPE_CHECKING, Any, cast
 
-from py_mini_racer._exc import JSArrayIndexError, JSPromiseError
+from py_mini_racer._exc import JSArrayIndexError
 from py_mini_racer._types import (
+    AsyncJSFunction,
+    AsyncJSPromise,
     JSArray,
     JSFunction,
     JSMappedObject,
@@ -19,30 +19,15 @@ from py_mini_racer._types import (
     JSUndefinedType,
     PythonJSConvertedTypes,
 )
-from py_mini_racer._wrap_py_function import wrap_py_function_as_js_function
 
 if TYPE_CHECKING:
-    from asyncio import Future
     from collections.abc import Generator, Iterator
 
-    from py_mini_racer._exc import JSEvalException
     from py_mini_racer._js_value_manipulator import JSValueManipulator
     from py_mini_racer._value_handle import ValueHandle
 
 
-def _get_exception_msg(reason: PythonJSConvertedTypes) -> str:
-    if not isinstance(reason, JSMappedObject):
-        return str(reason)
-
-    if "stack" in reason:
-        return cast("str", reason["stack"])
-
-    return str(reason)
-
-
 class JSObjectImpl(JSObject):
-    """A JavaScript object."""
-
     def __init__(
         self, val_manipulator: JSValueManipulator, handle: ValueHandle
     ) -> None:
@@ -58,13 +43,6 @@ class JSObjectImpl(JSObject):
 
 
 class JSMappedObjectImpl(JSObjectImpl, JSMappedObject):
-    """A JavaScript object with Pythonic MutableMapping methods (`keys()`,
-    `__getitem__()`, etc).
-
-    `keys()` and `__iter__()` will return properties from any prototypes as well as this
-    object, as if using a for-in statement in JavaScript.
-    """
-
     def __iter__(self) -> Iterator[PythonJSConvertedTypes]:
         return iter(self._get_own_property_names())
 
@@ -87,11 +65,6 @@ class JSMappedObjectImpl(JSObjectImpl, JSMappedObject):
 
 
 class JSArrayImpl(JSArray, JSObjectImpl):
-    """JavaScript array.
-
-    Has Pythonic MutableSequence methods (e.g., `insert()`, `__getitem__()`, ...).
-    """
-
     def __len__(self) -> int:
         return cast("int", self._val_manipulator.get_object_item(self, "length"))
 
@@ -142,92 +115,35 @@ class JSArrayImpl(JSArray, JSObjectImpl):
 
 
 class JSFunctionImpl(JSMappedObjectImpl, JSFunction):
-    """JavaScript function.
-
-    You can call this object from Python, passing in positional args to match what the
-    JavaScript function expects, along with a keyword argument, `timeout_sec`.
-    """
-
     def __call__(
         self,
         *args: PythonJSConvertedTypes,
         this: JSObject | JSUndefinedType = JSUndefined,
         timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes:
-        return self._val_manipulator.call_function(
+        return self._val_manipulator.sync_call_function(
             self, *args, this=this, timeout_sec=timeout_sec
         )
 
 
+class AsyncJSFunctionImpl(JSMappedObjectImpl, AsyncJSFunction):
+    async def __call__(
+        self,
+        *args: PythonJSConvertedTypes,
+        this: JSObject | JSUndefinedType = JSUndefined,
+    ) -> PythonJSConvertedTypes:
+        return await self._val_manipulator.async_call_function(self, *args, this=this)
+
+
 class JSSymbolImpl(JSMappedObjectImpl, JSSymbol):
-    """JavaScript symbol."""
+    pass
 
 
 class JSPromiseImpl(JSObjectImpl, JSPromise):
-    """JavaScript Promise.
-
-    To get a value, call `promise.get()` to block, or `await promise` from within an
-    `async` coroutine. Either will raise a Python exception if the JavaScript Promise
-    is rejected.
-    """
-
     def get(self, *, timeout: float | None = None) -> PythonJSConvertedTypes:
-        """Get the value, or raise an exception. This call blocks.
+        return self._val_manipulator.sync_await_promise(self, timeout)
 
-        Args:
-            timeout: number of milliseconds after which the execution is interrupted.
-                This is deprecated; use timeout_sec instead.
-        """
 
-        future: SyncFuture[JSArray] = SyncFuture()
-        is_rejected = False
-
-        def on_resolved(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            future.set_result(cast("JSArray", value))
-
-        def on_rejected(value: PythonJSConvertedTypes | JSEvalException) -> None:
-            nonlocal is_rejected
-            is_rejected = True
-            future.set_result(cast("JSArray", value))
-
-        with (
-            self._val_manipulator.js_to_py_callback(on_resolved) as on_resolved_js_func,
-            self._val_manipulator.js_to_py_callback(on_rejected) as on_rejected_js_func,
-        ):
-            self._val_manipulator.promise_then(
-                self, on_resolved_js_func, on_rejected_js_func
-            )
-
-            result = future.result(timeout=timeout)
-
-        if is_rejected:
-            msg = _get_exception_msg(result[0])
-            raise JSPromiseError(msg)
-
-        return result[0]
-
+class AsyncJSPromiseImpl(JSObjectImpl, AsyncJSPromise):
     def __await__(self) -> Generator[Any, None, Any]:
-        return self._do_await().__await__()
-
-    async def _do_await(self) -> PythonJSConvertedTypes:
-        future: Future[PythonJSConvertedTypes] = get_running_loop().create_future()
-
-        async def on_resolved(value: PythonJSConvertedTypes) -> None:
-            future.set_result(value)
-
-        async def on_rejected(value: PythonJSConvertedTypes) -> None:
-            future.set_exception(JSPromiseError(_get_exception_msg(value)))
-
-        async with (
-            wrap_py_function_as_js_function(
-                self._val_manipulator, on_resolved
-            ) as on_resolved_js_func,
-            wrap_py_function_as_js_function(
-                self._val_manipulator, on_rejected
-            ) as on_rejected_js_func,
-        ):
-            self._val_manipulator.promise_then(
-                self, on_resolved_js_func, on_rejected_js_func
-            )
-
-            return await future
+        return self._val_manipulator.async_await_promise(self).__await__()

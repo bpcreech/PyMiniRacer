@@ -8,7 +8,7 @@ Minimal, modern embedded V8 for Python.
 
 [Full documentation](https://bpcreech.com/PyMiniRacer/).
 
-## Features
+## In brief
 
 - Latest ECMAScript support
 - Web Assembly support
@@ -19,18 +19,13 @@ Minimal, modern embedded V8 for Python.
 MiniRacer can be easily used by Django or Flask projects to minify assets, run babel or
 WASM modules.
 
-## New home! (As of March 2024)
-
 PyMiniRacer was created by [Sqreen](https://github.com/sqreen), and originally lived at
 <https://github.com/sqreen/PyMiniRacer> with the PyPI package
-[`py-mini-racer`](https://pypi.org/project/py-mini-racer/).
-
-As of March 2024, after a few years without updates, [I](https://bpcreech.com) have
-reached out to the original Sqreen team. We agreed that I should fork PyMiniRacer,
-giving it a new home at <https://github.com/bpcreech/PyMiniRacer> with a new PyPI
-package [`mini-racer`](https://pypi.org/project/mini-racer/) (_note: no `py-`_). It now
-has [a new version](https://bpcreech.com/PyMiniRacer/history/#070-2024-03-06) for the
-first time since 2021!
+[`py-mini-racer`](https://pypi.org/project/py-mini-racer/). After dicussion with the
+original Sqreen team, [I](https://bpcreech.com) have created a new official home for at
+<https://github.com/bpcreech/PyMiniRacer> with a new PyPI package
+[`mini-racer`](https://pypi.org/project/mini-racer/) (_note: no `py-`_). See
+[the full history](https://bpcreech.com/PyMiniRacer/history) for more.
 
 ## Examples
 
@@ -132,6 +127,14 @@ MiniRacer is ES6 capable:
     False
 ```
 
+JavaScript `null` and `undefined` are modeled in Python as `None` and `JSUndefined`,
+respectively:
+
+```python
+    >>> list(ctx.eval("[null, undefined]"))
+    [None, JSUndefined]
+```
+
 MiniRacer supports asynchronous execution using JS `Promise` instances (_new in
 v0.10.0_):
 
@@ -142,43 +145,51 @@ v0.10.0_):
     42
 ```
 
-You can use JS `Promise` instances with Python `async` (_new in v0.10.0_):
+For asyncio-based workflows, you can use `async_mini_racer` (_new in v0.14.0_):
 
 ```python
-    >>> import asyncio
-    >>> async def demo():
-    ...     promise = ctx.eval(
-    ...         "new Promise((res, rej) => setTimeout(() => res(42), 10000))")
-    ...     return await promise
+    % python -m asyncio
+    >>> from py_mini_racer import async_mini_racer
+    >>> async with async_mini_racer() as ctx:
+    ...     print(await ctx.eval('1+1'))
     ...
-    >>> asyncio.run(demo())  # blocks for 10 seconds, and then:
+    2
+    >>> async with async_mini_racer() as ctx:
+    ...     # Note two "awaits" here: one to get the Promise, and one to get
+    ...     # its value.
+    ...     promise = await ctx.eval(
+    ...         "new Promise((res, rej) => setTimeout(() => res(42), 10000))")
+    ...     print(await promise)  # yields for 10 seconds, and then:
+    ...
     42
+    >>> async with async_mini_racer() as ctx:
+    ...     # Note two "awaits" here: one to get the Function, and one to call
+    ...     # it.
+    ...     func = await ctx.eval("a => a*a")
+    ...     print(await func(4))
+    16
 ```
 
-JavaScript `null` and `undefined` are modeled in Python as `None` and `JSUndefined`,
-respectively:
+You can install callbacks from JavaScript to Python (_new in v0.12.0_ **changed in
+v0.14.0:** _this functionality is only avaiable in `async_mini_racer`, not synchronous
+mode_):
 
 ```python
-    >>> list(ctx.eval("[undefined, null]"))
-    [JSUndefined, None]
-```
-
-You can install callbacks from JavaScript to Python (_new in v0.12.0_):
-
-```python
+    % python -m asyncio
+    >>> from py_mini_racer import async_mini_racer
     >>> async def read_file(fn):
     ...     with open(fn) as f:  # (or aiofiles would be even better here)
     ...         return f.read()
     ...
-    >>> async def get_dictionary():
-    ...    async with ctx.wrap_py_function(read_file) as jsfunc:
-    ...        # "Install" our JS function on the global "this" object:
-    ...        ctx.eval('this')['read_file'] = jsfunc
-    ...        d = await ctx.eval('this.read_file("/usr/share/dict/words")')
-    ...        return d.split()
-    ...
-    >>> dictionary = asyncio.run(get_dictionary())
-    >>> print(dictionary[0:10])
+    >>> async with (
+    ...    async_mini_racer() as ctx,
+    ...    ctx.wrap_py_function(read_file) as jsfunc
+    ..  ):
+    ...    # "Install" our JS function on the global "this" object:
+    ...    (await ctx.eval('this'))['read_file'] = jsfunc
+    ...    # Note: two awaits, one to run the function, one to await the promise:
+    ...    d = await (await ctx.eval('this.read_file("/usr/share/dict/words")'))
+    ...    print(d.split()[0:10])
     ['A', 'AA', 'AAA', "AA's", 'AB', 'ABC', "ABC's", 'ABCs', 'ABM', "ABM's"]
 ```
 

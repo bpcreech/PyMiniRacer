@@ -67,6 +67,21 @@ class JSFunction(JSMappedObject):
         raise NotImplementedError
 
 
+class AsyncJSFunction(JSMappedObject):
+    """JavaScript function.
+
+    You can call this object from Python, passing in positional args to match what the
+    JavaScript function expects.
+    """
+
+    async def __call__(
+        self,
+        *args: PythonJSConvertedTypes,
+        this: JSObject | JSUndefinedType = JSUndefined,
+    ) -> PythonJSConvertedTypes:
+        raise NotImplementedError
+
+
 class JSSymbol(JSMappedObject):
     """JavaScript symbol."""
 
@@ -74,18 +89,22 @@ class JSSymbol(JSMappedObject):
 class JSPromise(JSObject):
     """JavaScript Promise.
 
-    To get a value, call `promise.get()` to block, or `await promise` from within an
-    `async` coroutine. Either will raise a Python exception if the JavaScript Promise
-    is rejected.
+    To get a value, call `promise.get()` (which blocks). This function will raise a
+    Python exception if the JavaScript Promise is rejected.
     """
 
     def get(self, *, timeout: float | None = None) -> PythonJSConvertedTypes:
         raise NotImplementedError
 
-    def __await__(self) -> Generator[Any, None, Any]:
-        raise NotImplementedError
 
-    async def _do_await(self) -> PythonJSConvertedTypes:
+class AsyncJSPromise(JSObject):
+    """JavaScript Promise.
+
+    To get a value, `await promise`. This will raise a Python exception if the
+    JavaScript Promise is rejected.
+    """
+
+    def __await__(self) -> Generator[Any, None, Any]:
         raise NotImplementedError
 
 
@@ -99,7 +118,9 @@ PythonJSConvertedTypes: TypeAlias = (
     | datetime
     | memoryview
     | JSPromise
+    | AsyncJSPromise
     | JSFunction
+    | AsyncJSFunction
     | JSMappedObject
     | JSSymbol
     | JSArray

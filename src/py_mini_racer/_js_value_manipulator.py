@@ -3,20 +3,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 from py_mini_racer._types import (
+    AsyncJSFunction,
+    AsyncJSPromise,
     JSArray,
     JSFunction,
     JSObject,
     JSPromise,
     JSUndefined,
     JSUndefinedType,
+    PyJsFunctionType,
     PythonJSConvertedTypes,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from contextlib import AbstractContextManager
-
-    from py_mini_racer._exc import JSEvalException
+    from contextlib import AbstractAsyncContextManager
 
 
 class JSValueManipulator(Protocol):
@@ -44,7 +44,7 @@ class JSValueManipulator(Protocol):
 
     def array_push(self, arr: JSArray, new_val: PythonJSConvertedTypes) -> None: ...
 
-    def call_function(
+    def sync_call_function(
         self,
         func: JSFunction,
         *args: PythonJSConvertedTypes,
@@ -52,14 +52,23 @@ class JSValueManipulator(Protocol):
         timeout_sec: float | None = None,
     ) -> PythonJSConvertedTypes: ...
 
-    def js_to_py_callback(
-        self, func: Callable[[PythonJSConvertedTypes | JSEvalException], None]
-    ) -> AbstractContextManager[JSFunction]: ...
-
-    def promise_then(
-        self, promise: JSPromise, on_resolved: JSFunction, on_rejected: JSFunction
-    ) -> None: ...
-
-    def evaluate(
-        self, code: str, timeout_sec: float | None = None
+    async def async_call_function(
+        self,
+        func: AsyncJSFunction,
+        *args: PythonJSConvertedTypes,
+        this: JSObject | JSUndefinedType = JSUndefined,
     ) -> PythonJSConvertedTypes: ...
+
+    def wrap_py_function_as_js_function(
+        self, func: PyJsFunctionType
+    ) -> AbstractAsyncContextManager[AsyncJSFunction]: ...
+
+    def sync_await_promise(
+        self, promise: JSPromise, timeout: float | None = None
+    ) -> PythonJSConvertedTypes: ...
+
+    async def async_await_promise(
+        self, promise: AsyncJSPromise
+    ) -> PythonJSConvertedTypes: ...
+
+    async def evaluate(self, code: str) -> PythonJSConvertedTypes: ...

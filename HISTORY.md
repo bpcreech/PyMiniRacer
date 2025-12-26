@@ -1,5 +1,16 @@
 # History
 
+## 0.14 (2026-01-03)
+
+- Major revamp of Python-side async handling: we create a new interface
+  `async_mini_racer` which exposes new async-first semantics, and we modify the existing
+  synchronous API to use the same `asyncio`-powered implementation under the hood.
+- This version introduces a hopefully-minor blocking change: we no longer expose
+  `wrap_py_function` in the synchronous API. It is now only available in the async API.
+  This is intended to remove some
+  [Spidermouth-related](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/)
+  footguns.
+
 ## 0.13.2 (2025-12-25)
 
 - Improve performance of function calls by exposing Array.prototype.push (avoiding two
