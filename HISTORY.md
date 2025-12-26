@@ -1,5 +1,12 @@
 # History
 
+## 0.13.2 (2025-12-25)
+
+- Improve performance of function calls by exposing Array.prototype.push (avoiding two
+  round trips to get array size and then slice it, for function call argv construction).
+- Various internal simplifications intended to improve maintainability. None of these
+  should be externally visible.
+
 ## 0.13.1 (2025-12-24)
 
 - Fix MacOS wheels to not require MacOS 15.
