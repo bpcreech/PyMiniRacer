@@ -21,7 +21,7 @@
 
 namespace MiniRacer {
 
-Context::Context(v8::Platform* platform, Callback callback)
+Context::Context(v8::Platform* platform, RawCallback callback)
     : isolate_manager_(platform),
       isolate_object_collector_(&isolate_manager_),
       isolate_memory_monitor_(&isolate_manager_),
@@ -125,20 +125,21 @@ void Context::CancelTask(uint64_t task_id) {
   cancelable_task_manager_.Cancel(task_id);
 }
 
-auto Context::HeapSnapshot(uint64_t callback_id) -> uint64_t {
-  return RunTask(
-      [this](v8::Isolate* isolate) {
-        return heap_reporter_.HeapSnapshot(isolate);
-      },
-      callback_id);
+auto Context::HeapSnapshot() -> BinaryValueHandle* {
+  return bv_registry_.Remember(isolate_manager_
+                                   .Run([this](v8::Isolate* isolate) mutable {
+                                     return heap_reporter_.HeapSnapshot(
+                                         isolate);
+                                   })
+                                   .get());
 }
 
-auto Context::HeapStats(uint64_t callback_id) -> uint64_t {
-  return RunTask(
-      [this](v8::Isolate* isolate) {
-        return heap_reporter_.HeapStats(isolate);
-      },
-      callback_id);
+auto Context::HeapStats() -> BinaryValueHandle* {
+  return bv_registry_.Remember(isolate_manager_
+                                   .Run([this](v8::Isolate* isolate) mutable {
+                                     return heap_reporter_.HeapStats(isolate);
+                                   })
+                                   .get());
 }
 
 auto Context::GetIdentityHash(BinaryValueHandle* obj_handle)

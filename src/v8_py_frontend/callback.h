@@ -7,10 +7,9 @@
 
 namespace MiniRacer {
 
-using Callback = void (*)(uint64_t, BinaryValueHandle*);
+using RawCallback = void (*)(uint64_t, BinaryValueHandle*);
 
-using RememberValueAndCallback =
-    std::function<void(uint64_t, BinaryValue::Ptr)>;
+using CallbackFn = std::function<void(uint64_t, BinaryValue::Ptr)>;
 
 }  // end namespace MiniRacer
 

@@ -21,7 +21,7 @@ class ContextFactory {
                    const std::filesystem::path& icu_path);
 
   static auto Get() -> ContextFactory*;
-  auto MakeContext(Callback callback) -> uint64_t;
+  auto MakeContext(RawCallback callback) -> uint64_t;
   auto GetContext(uint64_t context_id) -> std::shared_ptr<Context>;
   void FreeContext(uint64_t context_id);
   auto Count() -> size_t;

@@ -40,7 +40,7 @@ LIB_EXPORT void mr_init_v8(const char* v8_flags, const char* icu_path) {
   MiniRacer::ContextFactory::Init(v8_flags, icu_path);
 }
 
-LIB_EXPORT auto mr_init_context(MiniRacer::Callback callback) -> uint64_t {
+LIB_EXPORT auto mr_init_context(MiniRacer::RawCallback callback) -> uint64_t {
   auto* context_factory = MiniRacer::ContextFactory::Get();
   if (context_factory == nullptr) {
     return 0;
@@ -115,13 +115,13 @@ LIB_EXPORT void mr_cancel_task(uint64_t context_id, uint64_t task_id) {
   context->CancelTask(task_id);
 }
 
-LIB_EXPORT auto mr_heap_stats(uint64_t context_id,
-                              uint64_t callback_id) -> uint64_t {
+LIB_EXPORT auto mr_heap_stats(uint64_t context_id)
+    -> MiniRacer::BinaryValueHandle* {
   auto context = GetContext(context_id);
   if (!context) {
-    return 0;
+    return nullptr;
   }
-  return context->HeapStats(callback_id);
+  return context->HeapStats();
 }
 
 LIB_EXPORT void mr_set_hard_memory_limit(uint64_t context_id, size_t limit) {
@@ -273,13 +273,13 @@ LIB_EXPORT auto mr_call_function(uint64_t context_id,
                                callback_id);
 }
 
-LIB_EXPORT auto mr_heap_snapshot(uint64_t context_id,
-                                 uint64_t callback_id) -> uint64_t {
+LIB_EXPORT auto mr_heap_snapshot(uint64_t context_id)
+    -> MiniRacer::BinaryValueHandle* {
   auto context = GetContext(context_id);
   if (!context) {
-    return 0;
+    return nullptr;
   }
-  return context->HeapSnapshot(callback_id);
+  return context->HeapSnapshot();
 }
 
 LIB_EXPORT auto mr_value_count(uint64_t context_id) -> size_t {

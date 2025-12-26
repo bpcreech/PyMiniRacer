@@ -58,3 +58,10 @@ class JSValueError(JSEvalException, ValueError):
 
 class JSConversionException(MiniRacerBaseException):
     """Type could not be converted to or from JavaScript."""
+
+
+class WrongReturnTypeException(MiniRacerBaseException):
+    """Invalid type returned by the JavaScript runtime."""
+
+    def __init__(self, typ: type) -> None:
+        super().__init__(f"Unexpected return value type {typ}")

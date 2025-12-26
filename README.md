@@ -8,7 +8,7 @@ Minimal, modern embedded V8 for Python.
 
 [Full documentation](https://bpcreech.com/PyMiniRacer/).
 
-## Features
+## In brief
 
 - Latest ECMAScript support
 - Web Assembly support
@@ -19,18 +19,13 @@ Minimal, modern embedded V8 for Python.
 MiniRacer can be easily used by Django or Flask projects to minify assets, run babel or
 WASM modules.
 
-## New home! (As of March 2024)
-
 PyMiniRacer was created by [Sqreen](https://github.com/sqreen), and originally lived at
 <https://github.com/sqreen/PyMiniRacer> with the PyPI package
-[`py-mini-racer`](https://pypi.org/project/py-mini-racer/).
-
-As of March 2024, after a few years without updates, [I](https://bpcreech.com) have
-reached out to the original Sqreen team. We agreed that I should fork PyMiniRacer,
-giving it a new home at <https://github.com/bpcreech/PyMiniRacer> with a new PyPI
-package [`mini-racer`](https://pypi.org/project/mini-racer/) (_note: no `py-`_). It now
-has [a new version](https://bpcreech.com/PyMiniRacer/history/#070-2024-03-06) for the
-first time since 2021!
+[`py-mini-racer`](https://pypi.org/project/py-mini-racer/). After dicussion with the
+original Sqreen team, [I](https://bpcreech.com) have created a new official home for at
+<https://github.com/bpcreech/PyMiniRacer> with a new PyPI package
+[`mini-racer`](https://pypi.org/project/mini-racer/) (_note: no `py-`_). See
+[the full history](https://bpcreech.com/PyMiniRacer/history) for more.
 
 ## Examples
 
@@ -132,6 +127,28 @@ MiniRacer is ES6 capable:
     False
 ```
 
+JavaScript `null` and `undefined` are modeled in Python as `None` and `JSUndefined`,
+respectively:
+
+```python
+    >>> list(ctx.eval("[null, undefined]"))
+    [None, JSUndefined]
+```
+
+You can prevent runaway execution in synchronous code using the `timeout_sec` parameter:
+
+```python
+    >>> ctx.eval('while (true) {}', timeout_sec=2)
+    # Spins for 2 seconds and then emits a traceback ending with...
+        raise JSTimeoutException from e
+    py_mini_racer._exc.JSTimeoutException: JavaScript was terminated by timeout
+    >>> func = ctx.eval('() => {while (true) {}}')
+    >>> func(timeout_sec=2)
+    # Spins for 2 seconds and then emits a traceback ending with...
+        raise JSTimeoutException from e
+    py_mini_racer._exc.JSTimeoutException: JavaScript was terminated by timeout
+```
+
 MiniRacer supports asynchronous execution using JS `Promise` instances (_new in
 v0.10.0_):
 
@@ -142,43 +159,90 @@ v0.10.0_):
     42
 ```
 
-You can use JS `Promise` instances with Python `async` (_new in v0.10.0_):
+For more deterministic cleanup behavior, we strongly recommend allocating a MiniRacer
+from a context manager (_new in v0.14.0_):
 
 ```python
-    >>> import asyncio
+    >>> from py_mini_racer import mini_racer
+    >>> with mini_racer() as ctx:
+    ...     print(ctx.eval("Array.from('foobar').reverse().join('')"))
+    raboof
+```
+
+MiniRacer uses `asyncio` internally to manage V8. Both `MiniRacer()` and the
+`mini_racer()` context manager will capture the currently-running event loop, or you can
+specify a loop explicitly, and in non-async contexts, `MiniRacer` will launch its own
+event loop with its own background thread to service it. (_new in v0.14.0_)
+
+```python
+    >>> from py_mini_racer import MiniRacer, mini_racer
+    >>> ctx = MiniRacer()  # launches a new event loop in a new thread
+    >>> with mini_racer() as ctx:  # same: launches a new event loop in a new thread
+    ...     pass
+    ...
     >>> async def demo():
+    ...     with mini_racer() as ctx:  # reuses the running event loop
+    ...         pass
+    ...
+    >>> import asyncio
+    >>> asyncio.run(demo())
+    >>> my_loop = asyncio.new_event_loop()
+    >>> with mini_racer(my_loop) as ctx:  # uses the specified event loop
+    ...     pass
+```
+
+When calling into MiniRacer from async code, you must await promises using `await`
+(instead of `promise.get()`):
+
+```python
+    % python -m asyncio
+    >>> from py_mini_racer import mini_racer
+    >>> with mini_racer() as ctx:
     ...     promise = ctx.eval(
     ...         "new Promise((res, rej) => setTimeout(() => res(42), 10000))")
-    ...     return await promise
+    ...     print(await promise)  # yields for 10 seconds, and then:
     ...
-    >>> asyncio.run(demo())  # blocks for 10 seconds, and then:
     42
 ```
 
-JavaScript `null` and `undefined` are modeled in Python as `None` and `JSUndefined`,
-respectively:
+`MiniRacer` does not support the `timeout_sec` parameter in async evaluation. Instead
+request a cancelable evaluation and use a construct like `asyncio.wait_for`:
 
 ```python
-    >>> list(ctx.eval("[undefined, null]"))
-    [JSUndefined, None]
+    % python -m asyncio
+    >>> from py_mini_racer import mini_racer
+    >>> with mini_racer() as ctx:
+    ...     # Use eval_cancelable(...), which has async semantics:
+    ...     await asyncio.wait_for(ctx.eval_cancelable('while (true) {}'), timeout=2)
+    # Spins for 2 seconds and then emits a traceback ending with...
+        raise TimeoutError from exc_val
+    TimeoutError
+    >>> with mini_racer() as ctx:
+    ...     func = ctx.eval('() => {while (true) {}}')
+    ...     # Upgrade func using .cancelable(), which introduces async semantics:
+    ...     cancelable_func = func.cancelable()
+    ...     await asyncio.wait_for(cancelable_func(), timeout=2)
+    # Spins for 2 seconds and then emits a traceback ending with...
+        raise TimeoutError from exc_val
+    TimeoutError
 ```
 
-You can install callbacks from JavaScript to Python (_new in v0.12.0_):
+You can install callbacks from JavaScript to Python (_new in v0.12.0_). Only async
+callbacks are supported:
 
 ```python
+    % python -m asyncio
+    >>> from py_mini_racer import mini_racer
     >>> async def read_file(fn):
     ...     with open(fn) as f:  # (or aiofiles would be even better here)
     ...         return f.read()
     ...
-    >>> async def get_dictionary():
-    ...    async with ctx.wrap_py_function(read_file) as jsfunc:
-    ...        # "Install" our JS function on the global "this" object:
-    ...        ctx.eval('this')['read_file'] = jsfunc
-    ...        d = await ctx.eval('this.read_file("/usr/share/dict/words")')
-    ...        return d.split()
-    ...
-    >>> dictionary = asyncio.run(get_dictionary())
-    >>> print(dictionary[0:10])
+    >>> with mini_racer() as ctx:
+    ...     async with ctx.wrap_py_function(read_file) as jsfunc:
+    ...         # "Install" our (async) JS function on the global "this" object:
+    ...         ctx.eval('this')['read_file'] = jsfunc
+    ...         d = await ctx.eval('read_file("/usr/share/dict/words")')
+    ...         print(d.split()[0:10])
     ['A', 'AA', 'AAA', "AA's", 'AB', 'ABC', "ABC's", 'ABCs', 'ABM', "ABM's"]
 ```
 

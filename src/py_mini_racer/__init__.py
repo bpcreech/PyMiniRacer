@@ -16,8 +16,9 @@ from py_mini_racer._exc import (
     JSTimeoutException,
     JSValueError,
 )
-from py_mini_racer._mini_racer import MiniRacer, StrictMiniRacer
+from py_mini_racer._mini_racer import MiniRacer, StrictMiniRacer, mini_racer
 from py_mini_racer._types import (
+    CancelableJSFunction,
     JSArray,
     JSFunction,
     JSMappedObject,
@@ -32,6 +33,7 @@ from py_mini_racer._types import (
 
 __all__ = [
     "DEFAULT_V8_FLAGS",
+    "CancelableJSFunction",
     "JSArray",
     "JSArrayIndexError",
     "JSEvalException",
@@ -55,4 +57,5 @@ __all__ = [
     "PythonJSConvertedTypes",
     "StrictMiniRacer",
     "init_mini_racer",
+    "mini_racer",
 ]

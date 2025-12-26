@@ -28,7 +28,7 @@ auto ContextFactory::Get() -> ContextFactory* {
   return singleton_;
 }
 
-auto ContextFactory::MakeContext(Callback callback) -> uint64_t {
+auto ContextFactory::MakeContext(RawCallback callback) -> uint64_t {
   // Actually create the context before we get the lock, in case the program is
   // making Contexts in other threads:
   auto context = std::make_shared<Context>(current_platform_.get(), callback);

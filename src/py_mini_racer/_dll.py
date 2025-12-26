@@ -108,16 +108,16 @@ def _build_dll_handle(dll_path: Path) -> ctypes.CDLL:  # noqa: PLR0915
 
     handle.mr_cancel_task.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
 
-    handle.mr_heap_stats.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
-    handle.mr_heap_stats.restype = ctypes.c_uint64
+    handle.mr_heap_stats.argtypes = [ctypes.c_uint64]
+    handle.mr_heap_stats.restype = RawValueHandle
 
     handle.mr_low_memory_notification.argtypes = [ctypes.c_uint64]
 
     handle.mr_make_js_callback.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
     handle.mr_make_js_callback.restype = RawValueHandle
 
-    handle.mr_heap_snapshot.argtypes = [ctypes.c_uint64, ctypes.c_uint64]
-    handle.mr_heap_snapshot.restype = ctypes.c_uint64
+    handle.mr_heap_snapshot.argtypes = [ctypes.c_uint64]
+    handle.mr_heap_snapshot.restype = RawValueHandle
 
     handle.mr_get_identity_hash.argtypes = [ctypes.c_uint64, RawValueHandle]
     handle.mr_get_identity_hash.restype = RawValueHandle
