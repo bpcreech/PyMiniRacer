@@ -44,7 +44,9 @@ def test_version() -> None:
 
 def test_sandbox() -> None:
     mr = MiniRacer()
-    assert mr._ctx.v8_is_using_sandbox()  # noqa: SLF001
+    state = mr._state  # noqa: SLF001
+    assert state is not None
+    assert state.ctx.v8_is_using_sandbox()
 
 
 def test_del() -> None:

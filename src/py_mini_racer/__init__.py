@@ -16,8 +16,15 @@ from py_mini_racer._exc import (
     JSTimeoutException,
     JSValueError,
 )
-from py_mini_racer._mini_racer import MiniRacer, StrictMiniRacer
+from py_mini_racer._mini_racer import (
+    AsyncMiniRacer,
+    MiniRacer,
+    StrictMiniRacer,
+    async_mini_racer,
+)
 from py_mini_racer._types import (
+    AsyncJSFunction,
+    AsyncJSPromise,
     JSArray,
     JSFunction,
     JSMappedObject,
@@ -32,6 +39,9 @@ from py_mini_racer._types import (
 
 __all__ = [
     "DEFAULT_V8_FLAGS",
+    "AsyncJSFunction",
+    "AsyncJSPromise",
+    "AsyncMiniRacer",
     "JSArray",
     "JSArrayIndexError",
     "JSEvalException",
@@ -54,5 +64,6 @@ __all__ = [
     "PyJsFunctionType",
     "PythonJSConvertedTypes",
     "StrictMiniRacer",
+    "async_mini_racer",
     "init_mini_racer",
 ]

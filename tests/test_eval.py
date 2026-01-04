@@ -9,6 +9,7 @@ from typing import cast
 import pytest
 
 from py_mini_racer import (
+    AsyncJSPromise,
     JSEvalException,
     JSOOMException,
     JSParseException,
@@ -19,7 +20,8 @@ from py_mini_racer import (
     JSUndefined,
     MiniRacer,
 )
-from tests.gc_check import assert_no_v8_objects
+from py_mini_racer._mini_racer import async_mini_racer
+from tests.gc_check import assert_no_v8_objects, async_assert_no_v8_objects
 
 # Wait time for async tests to finish.
 _ASYNC_COMPLETION_WAIT_SEC = 10
@@ -418,25 +420,26 @@ new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
 
 
 def test_promise_async() -> None:
-    mr = MiniRacer()
-
     async def run_test() -> None:
-        p = cast(
-            "JSPromise",
-            mr.eval(
-                """
+        async with async_mini_racer() as mr:
+            p = cast(
+                "AsyncJSPromise",
+                await mr.eval(
+                    """
 new Promise((res, rej) => setTimeout(() => res(42), 1000)); // 1 s timeout
 """
-            ),
-        )
-        start = time()
-        result = await p
-        assert time() - start > 0.5  # noqa: PLR2004
-        assert time() - start < _ASYNC_COMPLETION_WAIT_SEC
-        assert result == 42  # noqa: PLR2004
+                ),
+            )
 
-    asyncio_run(run_test())
-    assert_no_v8_objects(mr)
+            start = time()
+            result = await p
+            assert time() - start > 0.5  # noqa: PLR2004
+            assert time() - start < _ASYNC_COMPLETION_WAIT_SEC
+            assert result == 42  # noqa: PLR2004
+            del p, result
+            await async_assert_no_v8_objects(mr)
+
+    asyncio_run(run_test(), debug=True)
 
 
 def test_resolved_promise_sync() -> None:
@@ -451,15 +454,16 @@ def test_resolved_promise_sync() -> None:
 
 
 def test_resolved_promise_async() -> None:
-    mr = MiniRacer()
-
     async def run_test() -> None:
-        p = cast("JSPromise", mr.eval("Promise.resolve(6*7)"))
-        val = await p
-        assert val == 42  # noqa: PLR2004
+        async with async_mini_racer() as mr:
+            p = cast("AsyncJSPromise", await mr.eval("Promise.resolve(6*7)"))
+            val = await p
+
+            assert val == 42  # noqa: PLR2004
+            del p, val
+            await async_assert_no_v8_objects(mr)
 
     asyncio_run(run_test())
-    assert_no_v8_objects(mr)
 
 
 def test_rejected_promise_sync() -> None:
@@ -482,23 +486,28 @@ JavaScript rejected promise with reason: Error: this is an error
 
 
 def test_rejected_promise_async() -> None:
-    mr = MiniRacer()
+    MiniRacer()
 
     async def run_test() -> None:
-        p = cast("JSPromise", mr.eval("Promise.reject(new Error('this is an error'))"))
-        with pytest.raises(JSPromiseError) as exc_info:
-            await p
+        async with async_mini_racer() as mr:
+            p = cast(
+                "AsyncJSPromise",
+                await mr.eval("Promise.reject(new Error('this is an error'))"),
+            )
+            with pytest.raises(JSPromiseError) as exc_info:
+                await p
 
-        assert (
-            exc_info.value.args[0]
-            == """\
+            assert (
+                exc_info.value.args[0]
+                == """\
 JavaScript rejected promise with reason: Error: this is an error
     at <anonymous>:1:16
 """
-        )
+            )
+            del p, exc_info
+            await async_assert_no_v8_objects(mr)
 
     asyncio_run(run_test())
-    assert_no_v8_objects(mr)
 
 
 def test_rejected_promise_sync_stringerror() -> None:
