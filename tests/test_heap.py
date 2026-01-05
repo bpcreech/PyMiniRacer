@@ -11,3 +11,12 @@ def test_heap_stats() -> None:
     assert mr.heap_stats()["total_heap_size"] > 0
 
     assert_no_v8_objects(mr)
+
+
+def test_heap_snapshot() -> None:
+    mr = MiniRacer()
+
+    assert mr.heap_snapshot()["edges"]
+    assert mr.heap_snapshot()["strings"]
+
+    assert_no_v8_objects(mr)

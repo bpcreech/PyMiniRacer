@@ -19,7 +19,7 @@
 namespace MiniRacer {
 
 JSCallbackCaller::JSCallbackCaller(BinaryValueFactory* bv_factory,
-                                   RememberValueAndCallback callback)
+                                   CallbackFn callback)
     : bv_factory_(bv_factory), callback_(std::move(callback)) {}
 
 void JSCallbackCaller::DoCallback(v8::Local<v8::Context> context,
@@ -42,7 +42,7 @@ auto JSCallbackMaker::GetCallbackCallers()
 
 JSCallbackMaker::JSCallbackMaker(ContextHolder* context_holder,
                                  BinaryValueFactory* bv_factory,
-                                 RememberValueAndCallback callback)
+                                 CallbackFn callback)
     : context_holder_(context_holder),
       bv_factory_(bv_factory),
       callback_caller_holder_(

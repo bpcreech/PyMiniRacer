@@ -54,8 +54,17 @@ class JSArray(MutableSequence["PythonJSConvertedTypes"], JSObject):
 class JSFunction(JSMappedObject):
     """JavaScript function.
 
+    This type is returned by synchronous MiniRacer contexts.
+
     You can call this object from Python, passing in positional args to match what the
-    JavaScript function expects, along with a keyword argument, `timeout_sec`.
+    JavaScript function expects.
+
+    In synchronous code you may supply an additional keyword argument, `timeout_sec`.
+
+    If you are running in an async context in the same event loop as Miniracer, you must
+    not supply a non-None value for timeout_sec. Instead call func.cancelable() to
+    obtain a CancellableJSFunction, and use a construct like asyncio.wait_for(...) to
+    apply a timeout.
     """
 
     def __call__(
@@ -63,6 +72,28 @@ class JSFunction(JSMappedObject):
         *args: PythonJSConvertedTypes,
         this: JSObject | JSUndefinedType = JSUndefined,
         timeout_sec: float | None = None,
+    ) -> PythonJSConvertedTypes:
+        raise NotImplementedError
+
+    def cancelable(self) -> CancelableJSFunction:
+        raise NotImplementedError
+
+
+class CancelableJSFunction(JSMappedObject):
+    """JavaScript function.
+
+    This type is returned by JSFunction.cancelable().
+
+    You can call this object from Python, passing in positional args to match what the
+    JavaScript function expects. Calls on the Python side are async, regardless of
+    whether the underlying JS function is async (so a call to an async JS function will
+    return a JSPromise, requiring a "double await" in Python to get the result).
+    """
+
+    async def __call__(
+        self,
+        *args: PythonJSConvertedTypes,
+        this: JSObject | JSUndefinedType = JSUndefined,
     ) -> PythonJSConvertedTypes:
         raise NotImplementedError
 
@@ -74,18 +105,15 @@ class JSSymbol(JSMappedObject):
 class JSPromise(JSObject):
     """JavaScript Promise.
 
-    To get a value, call `promise.get()` to block, or `await promise` from within an
-    `async` coroutine. Either will raise a Python exception if the JavaScript Promise
-    is rejected.
+    To get a value, call `promise.get()` (which blocks) or `await promise` (in async
+    code). Both operations will raise a Python exception if the JavaScript Promise is
+    rejected.
     """
 
     def get(self, *, timeout: float | None = None) -> PythonJSConvertedTypes:
         raise NotImplementedError
 
     def __await__(self) -> Generator[Any, None, Any]:
-        raise NotImplementedError
-
-    async def _do_await(self) -> PythonJSConvertedTypes:
         raise NotImplementedError
 
 
@@ -100,6 +128,7 @@ PythonJSConvertedTypes: TypeAlias = (
     | memoryview
     | JSPromise
     | JSFunction
+    | CancelableJSFunction
     | JSMappedObject
     | JSSymbol
     | JSArray

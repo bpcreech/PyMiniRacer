@@ -45,7 +45,7 @@ LIB_EXPORT auto mr_v8_is_using_sandbox() -> bool;
  * Consequently the best thing for the callback to do is to signal another
  * thread (e.g., using a future or thread-safe queue) and immediately return.
  **/
-LIB_EXPORT auto mr_init_context(MiniRacer::Callback callback) -> uint64_t;
+LIB_EXPORT auto mr_init_context(MiniRacer::RawCallback callback) -> uint64_t;
 
 /** Free a MiniRacer context.
  *
@@ -209,8 +209,7 @@ LIB_EXPORT auto mr_array_push(uint64_t context_id,
 
 /** Cancel the given asynchronous task.
  *
- * (Such tasks are started by mr_eval, mr_call_function, mr_heap_stats, and
- * mr_heap_snapshot).
+ * (Such tasks are started by mr_eval and mr_call_function).
  **/
 LIB_EXPORT void mr_cancel_task(uint64_t context_id, uint64_t task_id);
 
@@ -248,26 +247,16 @@ LIB_EXPORT auto mr_call_function(uint64_t context_id,
 /** Get stats for the V8 heap.
  *
  * This function is intended for use in debugging only.
- *
- * This call is processed asynchronously and as such accepts a callback ID.
- * The callback ID and a MiniRacer::BinaryValueHandle* containing the
- * evaluation result are passed back to the callback upon completion. A task ID
- * is returned which can be passed back to mr_cancel_task to cancel evaluation.
  **/
-LIB_EXPORT auto mr_heap_stats(uint64_t context_id,
-                              uint64_t callback_id) -> uint64_t;
+LIB_EXPORT auto mr_heap_stats(uint64_t context_id)
+    -> MiniRacer::BinaryValueHandle*;
 
 /** Get a snapshot of the V8 heap.
  *
  * This function is intended for use in debugging only.
- *
- * This call is processed asynchronously and as such accepts a callback ID.
- * The callback ID and a MiniRacer::BinaryValueHandle* containing the
- * evaluation result are passed back to the callback upon completion. A task ID
- * is returned which can be passed back to mr_cancel_task to cancel evaluation.
  **/
-LIB_EXPORT auto mr_heap_snapshot(uint64_t context_id,
-                                 uint64_t callback_id) -> uint64_t;
+LIB_EXPORT auto mr_heap_snapshot(uint64_t context_id)
+    -> MiniRacer::BinaryValueHandle*;
 
 // NOLINTEND(bugprone-easily-swappable-parameters)
 

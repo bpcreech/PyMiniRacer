@@ -22,7 +22,7 @@ class ValueHandleConverter;
 
 class Context {
  public:
-  explicit Context(v8::Platform* platform, Callback callback);
+  explicit Context(v8::Platform* platform, RawCallback callback);
   ~Context();
 
   Context(const Context&) = delete;
@@ -41,8 +41,8 @@ class Context {
   template <typename... Params>
   auto AllocBinaryValue(Params&&... params) -> BinaryValueHandle*;
   void CancelTask(uint64_t task_id);
-  auto HeapSnapshot(uint64_t callback_id) -> uint64_t;
-  auto HeapStats(uint64_t callback_id) -> uint64_t;
+  auto HeapSnapshot() -> BinaryValueHandle*;
+  auto HeapStats() -> BinaryValueHandle*;
   auto Eval(BinaryValueHandle* code_handle,
 
             uint64_t callback_id) -> uint64_t;
@@ -81,7 +81,7 @@ class Context {
   IsolateMemoryMonitor isolate_memory_monitor_;
   BinaryValueFactory bv_factory_;
   BinaryValueRegistry bv_registry_;
-  RememberValueAndCallback callback_;
+  CallbackFn callback_;
   ContextHolder context_holder_;
   JSCallbackMaker js_callback_maker_;
   CodeEvaluator code_evaluator_;

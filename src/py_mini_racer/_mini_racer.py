@@ -1,17 +1,26 @@
 from __future__ import annotations
 
+import asyncio
 import json
+from contextlib import (
+    AbstractContextManager,
+    asynccontextmanager,
+    contextmanager,
+    suppress,
+)
+from itertools import count
 from json import JSONEncoder
+from threading import Thread
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from py_mini_racer._context import Context
-from py_mini_racer._dll import init_mini_racer
-from py_mini_racer._exc import MiniRacerBaseException
+from py_mini_racer._context import Context, ContextType, get_running_loop_or_none
+from py_mini_racer._dll import init_mini_racer, mr_callback_func
+from py_mini_racer._exc import JSTimeoutException, WrongReturnTypeException
+from py_mini_racer._objects import ObjectFactoryImpl
 from py_mini_racer._set_timeout import INSTALL_SET_TIMEOUT
-from py_mini_racer._wrap_py_function import wrap_py_function_as_js_function
 
 if TYPE_CHECKING:
-    from contextlib import AbstractAsyncContextManager
+    from collections.abc import AsyncGenerator, Generator
     from types import TracebackType
 
     from typing_extensions import Self
@@ -21,13 +30,7 @@ if TYPE_CHECKING:
         PyJsFunctionType,
         PythonJSConvertedTypes,
     )
-
-
-class WrongReturnTypeException(MiniRacerBaseException):
-    """Invalid type returned by the JavaScript runtime."""
-
-    def __init__(self, typ: type) -> None:
-        super().__init__(f"Unexpected return value type {typ}")
+    from py_mini_racer._value_handle import RawValueHandleType
 
 
 class MiniRacer:
@@ -40,7 +43,7 @@ class MiniRacer:
     with MiniRacer() as mr:
         ...
 
-    The MiniRacer instance will otherwise clean up the underlying V8 resource upon
+    The MiniRacer instance will otherwise clean up the underlying V8 resources upon
     garbage collection.
 
     Attributes:
@@ -50,20 +53,42 @@ class MiniRacer:
 
     json_impl: ClassVar[Any] = json
 
-    def __init__(self) -> None:
-        dll = init_mini_racer(ignore_duplicate_init=True)
-
-        self._ctx = Context(dll)
+    def __init__(self, context: Context | None = None) -> None:
+        if context is None:
+            self._own_context_maker: AbstractContextManager[Context] | None = (
+                _make_context()
+            )
+            self._ctx: Context | None = self._own_context_maker.__enter__()
+        else:
+            self._own_context_maker = None
+            self._ctx = context
 
         self.eval(INSTALL_SET_TIMEOUT)
 
-    def close(self) -> None:
+    def close(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: TracebackType | None = None,
+    ) -> None:
         """Close this MiniRacer instance.
 
         It is an error to use this MiniRacer instance or any JS objects returned by it
         after calling this method.
         """
-        self._ctx.close()
+        own_context_maker = self._own_context_maker
+        self._own_context_maker = None
+        self._ctx = None
+
+        if own_context_maker is not None:
+            own_context_maker.__exit__(exc_type, exc_val, exc_tb)
+
+    def __del__(self) -> None:
+        # Ignore ordering problems on process teardown.
+        # (A user who wants consistent teardown should use `with MiniRacer() as ctx`
+        # which makes the cleanup deterministic.)
+        with suppress(Exception):
+            self.close()
 
     def __enter__(self) -> Self:
         return self
@@ -74,14 +99,12 @@ class MiniRacer:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        del exc_type
-        del exc_val
-        del exc_tb
-        self.close()
+        self.close(exc_type, exc_val, exc_tb)
 
     @property
     def v8_version(self) -> str:
         """Return the V8 version string."""
+        assert self._ctx is not None
         return self._ctx.v8_version()
 
     def eval(
@@ -123,7 +146,42 @@ class MiniRacer:
             # Système international d'unités use seconds.
             timeout_sec = timeout / 1000
 
-        return self._ctx.evaluate(code=code, timeout_sec=timeout_sec)
+        ctx = self._ctx
+        assert ctx is not None
+
+        if not ctx.are_we_running_on_the_mini_racer_event_loop():
+
+            async def run() -> PythonJSConvertedTypes:
+                try:
+                    return await asyncio.wait_for(
+                        ctx.eval_cancelable(code), timeout=timeout_sec
+                    )
+                except asyncio.TimeoutError as e:
+                    raise JSTimeoutException from e
+
+            return asyncio.run_coroutine_threadsafe(run(), ctx.event_loop).result()
+
+        assert timeout_sec is None, (
+            "To apply a timeout in an async context, use "
+            "`await asyncio.wait_for(mr.eval_cancelable(your_params), "
+            "timeout=your_timeout)`"
+        )
+
+        return ctx.eval(code)
+
+    async def eval_cancelable(self, code: str) -> PythonJSConvertedTypes:
+        """Evaluate JavaScript code in the V8 isolate.
+
+        Similar to eval(), but runaway calls can be canceled by canceling the
+        coroutine's task, e.g., using:
+
+            await asyncio.wait_for(mr.eval_cancelable(...), timeout=some_timeout)
+
+        """
+
+        assert self._ctx is not None
+
+        return await self._ctx.eval_cancelable(code)
 
     def execute(
         self,
@@ -194,9 +252,10 @@ class MiniRacer:
         js = f"{expr}.apply(this, {json_args})"
         return self.execute(js, timeout_sec=timeout_sec, max_memory=max_memory)
 
-    def wrap_py_function(
+    @asynccontextmanager
+    async def wrap_py_function(
         self, func: PyJsFunctionType
-    ) -> AbstractAsyncContextManager[JSFunction]:
+    ) -> AsyncGenerator[JSFunction, None]:
         """Wrap a Python function such that it can be called from JS.
 
         To be wrapped and exposed in JavaScript, a Python function should:
@@ -215,7 +274,10 @@ class MiniRacer:
             can be passed into MiniRacer and called by JS code.
         """
 
-        return wrap_py_function_as_js_function(self._ctx, func)
+        assert self._ctx is not None
+
+        async with self._ctx.wrap_py_function_as_js_function(func) as js_func:
+            yield js_func
 
     def set_hard_memory_limit(self, limit: int) -> None:
         """Set a hard memory limit on this V8 isolate.
@@ -224,6 +286,8 @@ class MiniRacer:
 
         :param int limit: memory limit in bytes or 0 to reset the limit
         """
+
+        assert self._ctx is not None
         self._ctx.set_hard_memory_limit(limit)
 
     def set_soft_memory_limit(self, limit: int) -> None:
@@ -234,24 +298,112 @@ class MiniRacer:
 
         :param int limit: memory limit in bytes or 0 to reset the limit
         """
+
+        assert self._ctx is not None
         self._ctx.set_soft_memory_limit(limit)
 
     def was_hard_memory_limit_reached(self) -> bool:
         """Return true if the hard memory limit was reached on the V8 isolate."""
+
+        assert self._ctx is not None
         return self._ctx.was_hard_memory_limit_reached()
 
     def was_soft_memory_limit_reached(self) -> bool:
         """Return true if the soft memory limit was reached on the V8 isolate."""
+
+        assert self._ctx is not None
         return self._ctx.was_soft_memory_limit_reached()
 
     def low_memory_notification(self) -> None:
         """Ask the V8 isolate to collect memory more aggressively."""
+
+        assert self._ctx is not None
         self._ctx.low_memory_notification()
 
     def heap_stats(self) -> Any:  # noqa: ANN401
         """Return the V8 isolate heap statistics."""
 
+        assert self._ctx is not None
         return self.json_impl.loads(self._ctx.heap_stats())
+
+    def heap_snapshot(self) -> Any:  # noqa: ANN401
+        """Return a snapshot of the V8 isolate heap."""
+
+        assert self._ctx is not None
+        return self.json_impl.loads(self._ctx.heap_snapshot())
+
+
+@contextmanager
+def _running_event_loop(
+    event_loop: asyncio.AbstractEventLoop | None = None,
+) -> Generator[asyncio.AbstractEventLoop, None, None]:
+    """Pick an asyncio loop. In descending order of precedence:
+
+    1. The caller-specified one,
+    2. The running one (defined if we're being called from async context), or
+    3. One we create and launch a thread for, on the spot.
+    """
+
+    event_loop = event_loop or get_running_loop_or_none()
+
+    if event_loop is not None:
+        yield event_loop
+        return
+
+    event_loop = asyncio.new_event_loop()
+
+    def run_event_loop() -> None:
+        asyncio.set_event_loop(event_loop)
+        assert event_loop is not None
+        event_loop.run_forever()
+        event_loop.close()
+
+    event_loop_thread = Thread(target=run_event_loop, daemon=True)
+    event_loop_thread.start()
+
+    try:
+        yield event_loop
+    finally:
+        event_loop.call_soon_threadsafe(event_loop.stop)
+        event_loop_thread.join()
+
+
+@contextmanager
+def _make_context(
+    event_loop: asyncio.AbstractEventLoop | None = None,
+) -> Generator[Context, None, None]:
+    dll = init_mini_racer(ignore_duplicate_init=True)
+
+    context: Context
+
+    # define an all-purpose callback:
+    @mr_callback_func
+    def mr_callback(callback_id: int, raw_val_handle: RawValueHandleType) -> None:
+        nonlocal context
+        context.handle_callback_from_v8(callback_id, raw_val_handle)
+
+    next_cancelable_task_callback_id = count()
+    # reserve 0 as the callback for tasks we don't bother canceling; see
+    # _UNCANCELABLE_TASK_CALLBACK_ID:
+    _ = next(next_cancelable_task_callback_id)
+
+    ctx = ContextType(dll.mr_init_context(mr_callback))
+    try:
+        with _running_event_loop(event_loop) as loop:
+            context = Context(
+                dll, ctx, loop, ObjectFactoryImpl(), next_cancelable_task_callback_id
+            )
+            yield context
+    finally:
+        dll.mr_free_context(ctx)
+
+
+@contextmanager
+def mini_racer(
+    event_loop: asyncio.AbstractEventLoop | None = None,
+) -> Generator[MiniRacer, None]:
+    with _make_context(event_loop) as ctx:
+        yield MiniRacer(ctx)
 
 
 # Compatibility with versions 0.4 & 0.5

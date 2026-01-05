@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, cast
 
 import pytest
 
 from py_mini_racer import JSEvalException, JSTimeoutException, MiniRacer
-from tests.gc_check import assert_no_v8_objects
+from py_mini_racer._mini_racer import mini_racer
+from tests.gc_check import assert_no_v8_objects, async_assert_no_v8_objects
 
 if TYPE_CHECKING:
     from py_mini_racer import JSArray, JSFunction, JSMappedObject
@@ -85,5 +87,24 @@ def test_timeout() -> None:
 
     assert exc_info.value.args[0] == "JavaScript was terminated by timeout"
 
+    # make sure the isolate still accepts work:
+    assert mr.eval("1") == 1
+
     del func, exc_info
     assert_no_v8_objects(mr)
+
+
+def test_timeout_async() -> None:
+    async def run_test() -> None:
+        with mini_racer() as mr:
+            func = cast("JSFunction", mr.eval("() => { while(1) { } }")).cancelable()
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(func(), timeout=1)
+
+            # make sure the isolate still accepts work:
+            assert mr.eval("1") == 1
+
+            del func
+            await async_assert_no_v8_objects(mr)
+
+    asyncio.run(run_test())
