@@ -1,6 +1,6 @@
 # History
 
-## 0.14 (2026-01-03)
+## 0.14.0 (2026-01-03)
 
 - Major revamp of Python-side async handling: `PyMiniRacer` now manages most
   asynchronous work (in particular, _cancelable_ work) through an `asyncio` event loop.
@@ -8,7 +8,7 @@
   for deadlocks and race conditions.
 - We expose new async methods for function evaluation which unblock the event loop for
   long calculations while honoring standard `asyncio` task cancellation semantics.
-- To improve determinism during teardown, we expose and strongly recomment a new context
+- To improve determinism during teardown, we expose and strongly recommend a new context
   manager, `mini_racer` to more explicitly create and tear down `MiniRacer` instances.
 
 ## 0.13.2 (2025-12-25)
