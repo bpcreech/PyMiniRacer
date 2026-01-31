@@ -19,14 +19,14 @@ class ContextHolder {
   ContextHolder(ContextHolder&&) = delete;
   auto operator=(ContextHolder&& other) -> ContextHolder& = delete;
 
-  auto Get() -> v8::Persistent<v8::Context>*;
+  auto Get() -> v8::Global<v8::Context>*;
 
  private:
   IsolateManager* isolate_manager_;
-  std::unique_ptr<v8::Persistent<v8::Context>> context_;
+  std::unique_ptr<v8::Global<v8::Context>> context_;
 };
 
-inline auto ContextHolder::Get() -> v8::Persistent<v8::Context>* {
+inline auto ContextHolder::Get() -> v8::Global<v8::Context>* {
   return context_.get();
 }
 

@@ -104,15 +104,14 @@ class BinaryValue {
 
  private:
   auto GetHandle() -> BinaryValueHandle*;
-  void SavePersistentHandle(v8::Local<v8::Value> value);
+  void SaveGlobalHandle(v8::Local<v8::Value> value);
   void CreateBackingStoreRef(v8::Local<v8::Value> value);
 
   v8::Isolate* isolate_;
   IsolateObjectDeleter isolate_object_deleter_;
   BinaryValueHandle handle_;
   std::vector<char> msg_;
-  std::unique_ptr<v8::Persistent<v8::Value>, IsolateObjectDeleter>
-      persistent_handle_;
+  std::unique_ptr<v8::Global<v8::Value>, IsolateObjectDeleter> global_handle_;
   std::unique_ptr<std::shared_ptr<v8::BackingStore>, IsolateObjectDeleter>
       backing_store_;
 };
