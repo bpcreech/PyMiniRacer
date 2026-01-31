@@ -485,10 +485,10 @@ an easy API to submit tasks, whose callbacks accept as their first-and-only argu
 saving a copy of the pointer and using it later would defeat the point; don't do that.)
 
 One odd tidbit of PyMiniRacer is that _even object destruction_ has to use the above
-pattern. For example, it is (probably) not safe to free a `v8::Persistent` without
+pattern. For example, it is (probably) not safe to free a `v8::Global` without
 holding the isolate lock, so when a non-message-loop thread needs to destroy a wrapped
 V8 value, we enqueue a pretty trivial task for the message loop:
-`isolate_manager->Run([persistent]() { delete persistent; })`.
+`isolate_manager->Run([global]() { delete global; })`.
 
 See [here](https://groups.google.com/g/v8-users/c/glG3-3pufCo) for some discussion of
 this design on the v8-users mailing list.

@@ -17,7 +17,7 @@ ContextHolder::ContextHolder(IsolateManager* isolate_manager)
                      const v8::Isolate::Scope isolate_scope(isolate);
                      const v8::HandleScope handle_scope(isolate);
 
-                     return std::make_unique<v8::Persistent<v8::Context>>(
+                     return std::make_unique<v8::Global<v8::Context>>(
                          isolate, v8::Context::New(isolate));
                    })
                    .get()) {}

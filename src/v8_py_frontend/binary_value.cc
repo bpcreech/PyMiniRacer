@@ -48,10 +48,10 @@ BinaryValue::BinaryValue(v8::Isolate* isolate,
     handle_.int_val = (value->IsTrue() ? 1 : 0);
   } else if (value->IsFunction()) {
     handle_.type = type_function;
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   } else if (value->IsSymbol()) {
     handle_.type = type_symbol;
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   } else if (value->IsDate()) {
     handle_.type = type_date;
     const v8::Local<v8::Date> date = v8::Local<v8::Date>::Cast(value);
@@ -71,16 +71,16 @@ BinaryValue::BinaryValue(v8::Isolate* isolate,
   } else if (value->IsSharedArrayBuffer() || value->IsArrayBuffer() ||
              value->IsArrayBufferView()) {
     CreateBackingStoreRef(value);
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   } else if (value->IsPromise()) {
     handle_.type = type_promise;
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   } else if (value->IsArray()) {
     handle_.type = type_array;
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   } else if (value->IsObject()) {
     handle_.type = type_object;
-    SavePersistentHandle(value);
+    SaveGlobalHandle(value);
   }
 }
 
@@ -204,10 +204,10 @@ BinaryValue::BinaryValue(v8::Isolate* isolate,
 
 auto BinaryValue::ToValue(v8::Local<v8::Context> context)
     -> v8::Local<v8::Value> {
-  // If we've saved a handle to a v8::Persistent, we can return the exact v8
+  // If we've saved a handle to a v8::Global, we can return the exact v8
   // value to which this BinaryValue refers:
-  if (persistent_handle_) {
-    return persistent_handle_->Get(isolate_);
+  if (global_handle_) {
+    return global_handle_->Get(isolate_);
   }
 
   // Otherwise, try and rehydrate a v8::Value based on data stored in the
@@ -252,9 +252,9 @@ auto BinaryValue::GetHandle() -> BinaryValueHandle* {
   return &handle_;
 }
 
-void BinaryValue::SavePersistentHandle(v8::Local<v8::Value> value) {
-  persistent_handle_ = {new v8::Persistent<v8::Value>(isolate_, value),
-                        isolate_object_deleter_};
+void BinaryValue::SaveGlobalHandle(v8::Local<v8::Value> value) {
+  global_handle_ = {new v8::Global<v8::Value>(isolate_, value),
+                    isolate_object_deleter_};
 }
 
 void BinaryValue::CreateBackingStoreRef(v8::Local<v8::Value> value) {
