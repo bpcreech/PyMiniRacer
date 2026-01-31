@@ -210,8 +210,8 @@ Value::~Value() {
   }
 }
 
-auto Value::ToV8Value(v8::Isolate* isolate, v8::Local<v8::Context> context)
-    -> v8::Local<v8::Value> {
+auto Value::ToV8Value(v8::Isolate* isolate,
+                      v8::Local<v8::Context> context) -> v8::Local<v8::Value> {
   // If we've saved a handle to a v8::Global, we can return the exact v8
   // value to which this Value refers:
   auto* global_handle = std::get_if<v8::Global<v8::Value>>(&data_);

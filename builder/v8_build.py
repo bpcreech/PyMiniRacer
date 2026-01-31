@@ -24,7 +24,7 @@ basicConfig()
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 ROOT_DIR = Path(__file__).absolute().parents[1]
-V8_VERSION = "branch-heads/14.3"
+V8_VERSION = "branch-heads/14.4"
 
 
 @cache

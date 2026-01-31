@@ -19,8 +19,8 @@ ObjectManipulator::ObjectManipulator(ContextHolder* context,
                                      ValueFactory* val_factory)
     : context_(context), val_factory_(val_factory) {}
 
-auto ObjectManipulator::GetIdentityHash(v8::Isolate* isolate, Value* obj_ptr)
-    -> Value::Ptr {
+auto ObjectManipulator::GetIdentityHash(v8::Isolate* isolate,
+                                        Value* obj_ptr) -> Value::Ptr {
   const v8::Isolate::Scope isolate_scope(isolate);
   const v8::HandleScope handle_scope(isolate);
   const v8::Local<v8::Context> local_context = context_->Get()->Get(isolate);
