@@ -9,10 +9,10 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include "binary_value.h"
 #include "callback.h"
 #include "context_holder.h"
 #include "id_maker.h"
+#include "value.h"
 
 namespace MiniRacer {
 
@@ -23,14 +23,14 @@ namespace MiniRacer {
  */
 class JSCallbackCaller {
  public:
-  JSCallbackCaller(BinaryValueFactory* bv_factory, CallbackFn callback);
+  JSCallbackCaller(ValueFactory* val_factory, CallbackFn callback);
 
   void DoCallback(v8::Local<v8::Context> context,
                   uint64_t callback_id,
                   v8::Local<v8::Array> args);
 
  private:
-  BinaryValueFactory* bv_factory_;
+  ValueFactory* val_factory_;
   CallbackFn callback_;
 };
 
@@ -39,11 +39,10 @@ class JSCallbackCaller {
 class JSCallbackMaker {
  public:
   JSCallbackMaker(ContextHolder* context_holder,
-                  BinaryValueFactory* bv_factory,
+                  ValueFactory* val_factory,
                   CallbackFn callback);
 
-  auto MakeJSCallback(v8::Isolate* isolate,
-                      uint64_t callback_id) -> BinaryValue::Ptr;
+  auto MakeJSCallback(v8::Isolate* isolate, uint64_t callback_id) -> Value::Ptr;
 
  private:
   static void OnCalledStatic(const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -54,7 +53,7 @@ class JSCallbackMaker {
   static std::once_flag callback_callers_init_flag_;
 
   ContextHolder* context_holder_;
-  BinaryValueFactory* bv_factory_;
+  ValueFactory* val_factory_;
   IdHolder<JSCallbackCaller> callback_caller_holder_;
 };
 

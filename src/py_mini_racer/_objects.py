@@ -259,14 +259,14 @@ class ObjectFactoryImpl:
     def value_handle_to_python(  # noqa: C901, PLR0911, PLR0912
         self, ctx: Context, val_handle: ValueHandle
     ) -> PythonJSConvertedTypes:
-        """Convert a binary value handle from the C++ side into a Python object."""
+        """Convert a value handle from the C++ side into a Python object."""
 
-        # A MiniRacer binary value handle is a pointer to a structure which, for some
+        # A MiniRacer value handle is a pointer to a structure which, for some
         # simple types like ints, floats, and strings, is sufficient to describe the
         # data, enabling us to convert the value immediately and free the handle.
 
         # For more complex types, like Objects and Arrays, the handle is just an opaque
-        # pointer to a V8 object. In these cases, we retain the binary value handle,
+        # pointer to a V8 object. In these cases, we retain the value handle,
         # wrapping it in a Python object. We can then use the handle in follow-on API
         # calls to work with the underlying V8 object.
 

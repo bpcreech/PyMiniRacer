@@ -4,8 +4,8 @@
 #include <v8-isolate.h>
 #include <v8-persistent-handle.h>
 #include <cstdint>
-#include "binary_value.h"
 #include "context_holder.h"
+#include "value.h"
 
 namespace MiniRacer {
 
@@ -14,41 +14,36 @@ namespace MiniRacer {
  *
  * All methods in this function assume that the caller holds the Isolate lock
  * (i.e., is operating from the isolate message pump), and memory management of
- * the BinaryValue pointers is done by the caller. */
+ * the Value pointers is done by the caller. */
 class ObjectManipulator {
  public:
-  ObjectManipulator(ContextHolder* context, BinaryValueFactory* bv_factory);
+  ObjectManipulator(ContextHolder* context, ValueFactory* val_factory);
 
-  auto GetIdentityHash(v8::Isolate* isolate,
-                       BinaryValue* obj_ptr) -> BinaryValue::Ptr;
+  auto GetIdentityHash(v8::Isolate* isolate, Value* obj_ptr) -> Value::Ptr;
   auto GetOwnPropertyNames(v8::Isolate* isolate,
-                           BinaryValue* obj_ptr) const -> BinaryValue::Ptr;
-  auto Get(v8::Isolate* isolate,
-           BinaryValue* obj_ptr,
-           BinaryValue* key_ptr) -> BinaryValue::Ptr;
+                           Value* obj_ptr) const -> Value::Ptr;
+  auto Get(v8::Isolate* isolate, Value* obj_ptr, Value* key_ptr) -> Value::Ptr;
   auto Set(v8::Isolate* isolate,
-           BinaryValue* obj_ptr,
-           BinaryValue* key_ptr,
-           BinaryValue* val_ptr) -> BinaryValue::Ptr;
-  auto Del(v8::Isolate* isolate,
-           BinaryValue* obj_ptr,
-           BinaryValue* key_ptr) -> BinaryValue::Ptr;
+           Value* obj_ptr,
+           Value* key_ptr,
+           Value* val_ptr) -> Value::Ptr;
+  auto Del(v8::Isolate* isolate, Value* obj_ptr, Value* key_ptr) -> Value::Ptr;
   auto Splice(v8::Isolate* isolate,
-              BinaryValue* obj_ptr,
+              Value* obj_ptr,
               int32_t start,
               int32_t delete_count,
-              BinaryValue* new_val_ptr) -> BinaryValue::Ptr;
+              Value* new_val_ptr) -> Value::Ptr;
   auto Push(v8::Isolate* isolate,
-            BinaryValue* obj_ptr,
-            BinaryValue* new_val_ptr) -> BinaryValue::Ptr;
+            Value* obj_ptr,
+            Value* new_val_ptr) -> Value::Ptr;
   auto Call(v8::Isolate* isolate,
-            BinaryValue* func_ptr,
-            BinaryValue* this_ptr,
-            BinaryValue* argv_ptr) -> BinaryValue::Ptr;
+            Value* func_ptr,
+            Value* this_ptr,
+            Value* argv_ptr) -> Value::Ptr;
 
  private:
   ContextHolder* context_;
-  BinaryValueFactory* bv_factory_;
+  ValueFactory* val_factory_;
 };
 
 }  // end namespace MiniRacer

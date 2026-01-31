@@ -399,25 +399,25 @@ have for JavaScript. Wherever possible, we avoid interchanging raw pointers betw
 and Python. Instead, we interchange integer IDs. The C++ side of PyMiniRacer can convert
 integer IDs to raw pointers using a map, after validating that the IDs are still valid.
 
-### ... except for `BinaryValueHandle` pointers
+### ... except for `ValueHandle` pointers
 
-We break the above rule for `BinaryValueHandle` pointers. PyMiniRacer uses
-`BinaryValueHandle` to exchange most data between Python and C++. Python directly reads
-the contents of `BinaryValueHandle` pointers, to read primitive values (e.g., booleans,
-integers, and strings).
+We break the above rule for `ValueHandle` pointers. PyMiniRacer uses `ValueHandle` to
+exchange most data between Python and C++. Python directly reads the contents of
+`ValueHandle` pointers, to read primitive values (e.g., booleans, integers, and
+strings).
 
 We do this for theoretical performance reasons which have not yet been validated. To be
 consistent with the rest of PyMiniRacer's design, we _could_ create an API like:
 
-1. C++ generates a numeric `value_id` and stores a BinaryValue in a
-   `std::unordered_map<uint64_t, std::shared_ptr<BinaryValue>>`.
+1. C++ generates a numeric `value_id` and stores a Value in a
+   `std::unordered_map<uint64_t, std::shared_ptr<Value>>`.
 1. C++ gives Python that `value_id` to Python.
 1. To get any data Python has to call APIs like `mr_value_type(context_id, value_id)`,
    `mr_value_as_bool(context_id, value_id)`,
    `mr_value_as_string_len(context_id, value_id)`,
    `mr_value_as_string(context_id, value_id, buf, buflen)`, ...
 1. Eventually Python calls `mr_value_free(context_id, value_id)` which wipes out the map
-   entry, thus freeing the `BinaryValue`.
+   entry, thus freeing the `Value`.
 
 _\*\*Note: We don't do this. The above is \_not_ how PyMiniRacer actually handles
 values.\*\*\_
@@ -428,11 +428,11 @@ would be nice to switch to that model if it's sufficiently performant.
 
 For now at least, we instead use raw pointers for this case.
 
-We still don't fully trust Python with the lifecyce of `BinaryValueHandle` pointers;
-when Python passes these pointers back to C++, we still check validity by looking up the
+We still don't fully trust Python with the lifecyce of `ValueHandle` pointers; when
+Python passes these pointers back to C++, we still check validity by looking up the
 pointer as a key into a map (which then lets the C++ side of PyMiniRacer find the _rest_
-of the `BinaryValue` object). The C++ `MiniRacer::BinaryValueFactory` can
-authoritatively destruct any dangling `BinaryValue` objects when it exits.
+of the `Value` object). The C++ `MiniRacer::ValueFactory` can authoritatively destruct
+any dangling `Value` objects when it exits.
 
 This last especially helps with an odd scenario introduced by Python `__del__`: the
 order in which Python calls `__del__` on a collection of objects is neither guaranteed
@@ -440,18 +440,18 @@ nor very predictable. When a Python program drops references to a Python `MiniRa
 object, it's common for Python to call `_Context.__del__` before it calls
 `ValHandle.__del__`, thus destroying _the container for_ the value before it destroys
 the value itself. The C++ side of PyMiniRacer can easily detect this scenario: First,
-when destroying the `MiniRacer::Context`, it sees straggling `BinaryValue`s and destroys
-them. Then, when Python asks C++ to destroy the straggling `BinaryValueHandle`s, the C++
+when destroying the `MiniRacer::Context`, it sees straggling `Value`s and destroys them.
+Then, when Python asks C++ to destroy the straggling `ValueHandle`s, the C++
 `mr_free_value` API sees the `MiniRacer::Context` is already gone, and ignores the
 redundant request.
 
 The above scenario does imply a possibility for dangling pointer access: if Python calls
-`_Context.__del__` then tries to read the memory addressed by the raw
-`BinaryValueHandle` pointers, it will be committing a use-after-free error. We mitigate
-this problem by hiding `BinaryValueHandle` within PyMiniRacer's Python code, and by
-giving `ValHandle` (our Python wrapper of `BinaryValueHandle`) a reference to the
-`_Context`, preventing the context from being finalized until the `ValHandle` is _also_
-in Python's garbage list and on its way out.
+`_Context.__del__` then tries to read the memory addressed by the raw `ValueHandle`
+pointers, it will be committing a use-after-free error. We mitigate this problem by
+hiding `ValueHandle` within PyMiniRacer's Python code, and by giving `ValHandle` (our
+Python wrapper of `ValueHandle`) a reference to the `_Context`, preventing the context
+from being finalized until the `ValHandle` is _also_ in Python's garbage list and on its
+way out.
 
 ### Only touch (most of) the `v8::Isolate` from within the message loop
 
@@ -485,9 +485,9 @@ an easy API to submit tasks, whose callbacks accept as their first-and-only argu
 saving a copy of the pointer and using it later would defeat the point; don't do that.)
 
 One odd tidbit of PyMiniRacer is that _even object destruction_ has to use the above
-pattern. For example, it is (probably) not safe to free a `v8::Global` without
-holding the isolate lock, so when a non-message-loop thread needs to destroy a wrapped
-V8 value, we enqueue a pretty trivial task for the message loop:
+pattern. For example, it is (probably) not safe to free a `v8::Global` without holding
+the isolate lock, so when a non-message-loop thread needs to destroy a wrapped V8 value,
+we enqueue a pretty trivial task for the message loop:
 `isolate_manager->Run([global]() { delete global; })`.
 
 See [here](https://groups.google.com/g/v8-users/c/glG3-3pufCo) for some discussion of

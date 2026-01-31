@@ -107,7 +107,7 @@
   calling the function from Python, e.g., `mr.eval("myfunc")()`.
 
 - Hardening (meaning "fixing potential but not-yet-seen bugs") related to freeing
-  `BinaryValue` instances (which convey data from C++ to Python).
+  `Value` instances (which convey data from C++ to Python).
 
 - More hardening related to race conditions on teardown of the `MiniRacer` object in the
   unlikely condition that `eval` operations are still executing on the C++ side, and

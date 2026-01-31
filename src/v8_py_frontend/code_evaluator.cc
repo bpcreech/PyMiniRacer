@@ -9,21 +9,20 @@
 #include <v8-primitive.h>
 #include <v8-script.h>
 #include <v8-value.h>
-#include "binary_value.h"
 #include "context_holder.h"
 #include "isolate_memory_monitor.h"
+#include "value.h"
 
 namespace MiniRacer {
 
 CodeEvaluator::CodeEvaluator(ContextHolder* context,
-                             BinaryValueFactory* bv_factory,
+                             ValueFactory* val_factory,
                              IsolateMemoryMonitor* memory_monitor)
     : context_(context),
-      bv_factory_(bv_factory),
+      val_factory_(val_factory),
       memory_monitor_(memory_monitor) {}
 
-auto CodeEvaluator::Eval(v8::Isolate* isolate,
-                         BinaryValue* code_ptr) -> BinaryValue::Ptr {
+auto CodeEvaluator::Eval(v8::Isolate* isolate, Value* code_ptr) -> Value::Ptr {
   const v8::Isolate::Scope isolate_scope(isolate);
   const v8::HandleScope handle_scope(isolate);
   const v8::Local<v8::Context> context = context_->Get()->Get(isolate);
@@ -34,7 +33,7 @@ auto CodeEvaluator::Eval(v8::Isolate* isolate,
   const v8::Local<v8::Value> local_code_val = code_ptr->ToValue(context);
 
   if (!local_code_val->IsString()) {
-    return bv_factory_->New("code is not a string", type_execute_exception);
+    return val_factory_->New("code is not a string", type_execute_exception);
   }
 
   const v8::Local<v8::String> local_code_str = local_code_val.As<v8::String>();
@@ -47,27 +46,27 @@ auto CodeEvaluator::Eval(v8::Isolate* isolate,
   if (!v8::Script::Compile(context, local_code_str, &script_origin)
            .ToLocal(&script) ||
       script.IsEmpty()) {
-    return bv_factory_->New(context, trycatch.Message(), trycatch.Exception(),
-                            type_parse_exception);
+    return val_factory_->New(context, trycatch.Message(), trycatch.Exception(),
+                             type_parse_exception);
   }
 
   v8::MaybeLocal<v8::Value> maybe_value = script->Run(context);
   if (!maybe_value.IsEmpty()) {
-    return bv_factory_->New(context, maybe_value.ToLocalChecked());
+    return val_factory_->New(context, maybe_value.ToLocalChecked());
   }
 
   // Didn't execute. Find an error:
   if (memory_monitor_->IsHardMemoryLimitReached()) {
-    return bv_factory_->New("", type_oom_exception);
+    return val_factory_->New("", type_oom_exception);
   }
 
-  BinaryTypes result_type = type_execute_exception;
+  ValueTypes result_type = type_execute_exception;
   if (trycatch.HasTerminated()) {
     result_type = type_terminated_exception;
   }
 
-  return bv_factory_->New(context, trycatch.Message(), trycatch.Exception(),
-                          result_type);
+  return val_factory_->New(context, trycatch.Message(), trycatch.Exception(),
+                           result_type);
 }
 
 }  // end namespace MiniRacer

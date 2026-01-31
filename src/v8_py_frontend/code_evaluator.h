@@ -5,9 +5,9 @@
 #include <v8-isolate.h>
 #include <v8-local-handle.h>
 #include <v8-persistent-handle.h>
-#include "binary_value.h"
 #include "context_holder.h"
 #include "isolate_memory_monitor.h"
+#include "value.h"
 
 namespace MiniRacer {
 
@@ -15,14 +15,14 @@ namespace MiniRacer {
 class CodeEvaluator {
  public:
   CodeEvaluator(ContextHolder* context,
-                BinaryValueFactory* bv_factory,
+                ValueFactory* val_factory,
                 IsolateMemoryMonitor* memory_monitor);
 
-  auto Eval(v8::Isolate* isolate, BinaryValue* code_ptr) -> BinaryValue::Ptr;
+  auto Eval(v8::Isolate* isolate, Value* code_ptr) -> Value::Ptr;
 
  private:
   ContextHolder* context_;
-  BinaryValueFactory* bv_factory_;
+  ValueFactory* val_factory_;
   IsolateMemoryMonitor* memory_monitor_;
 };
 

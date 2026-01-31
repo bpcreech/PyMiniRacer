@@ -4,8 +4,8 @@ v8_shared_library("mini_racer") {
   output_name = "mini_racer"
   sources = [
     "exports.cc",
-    "binary_value.h",
-    "binary_value.cc",
+    "value.h",
+    "value.cc",
     "cancelable_task_runner.h",
     "cancelable_task_runner.cc",
     "code_evaluator.h",

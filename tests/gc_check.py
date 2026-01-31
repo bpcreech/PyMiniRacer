@@ -35,7 +35,7 @@ def assert_no_v8_objects(mr: MiniRacer) -> None:
     # Thus should only be reachable if we forgot to wrap an incoming pointer with a
     # ValueHandle (because ValueHandle.__del__ should otherwise take care of disposing
     # the C++ object):
-    assert ctx.value_count() == 0, "Foud uncollected BinaryValues on the C++ side"
+    assert ctx.value_count() == 0, "Foud uncollected Values on the C++ side"
 
 
 async def async_assert_no_v8_objects(mr: MiniRacer) -> None:
@@ -52,4 +52,4 @@ async def async_assert_no_v8_objects(mr: MiniRacer) -> None:
     # Thus should only be reachable if we forgot to wrap an incoming pointer with a
     # ValueHandle (because ValueHandle.__del__ should otherwise take care of disposing
     # the C++ object):
-    assert ctx.value_count() == 0, "Foud uncollected BinaryValues on the C++ side"
+    assert ctx.value_count() == 0, "Foud uncollected Values on the C++ side"
