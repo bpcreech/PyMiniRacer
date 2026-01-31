@@ -30,7 +30,8 @@ auto CodeEvaluator::Eval(v8::Isolate* isolate, Value* code_ptr) -> Value::Ptr {
 
   const v8::TryCatch trycatch(isolate);
 
-  const v8::Local<v8::Value> local_code_val = code_ptr->ToValue(context);
+  const v8::Local<v8::Value> local_code_val =
+      code_ptr->ToV8Value(isolate, context);
 
   if (!local_code_val->IsString()) {
     return val_factory_->New("code is not a string", type_execute_exception);
