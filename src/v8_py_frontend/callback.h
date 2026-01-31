@@ -3,13 +3,13 @@
 
 #include <cstdint>
 #include <functional>
-#include "binary_value.h"
+#include "value.h"
 
 namespace MiniRacer {
 
-using RawCallback = void (*)(uint64_t, BinaryValueHandle*);
+using RawCallback = void (*)(uint64_t, ValueHandle*);
 
-using CallbackFn = std::function<void(uint64_t, BinaryValue::Ptr)>;
+using CallbackFn = std::function<void(uint64_t, Value::Ptr)>;
 
 }  // end namespace MiniRacer
 

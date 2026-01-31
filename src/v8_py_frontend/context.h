@@ -4,7 +4,6 @@
 #include <v8-platform.h>
 #include <cstddef>
 #include <cstdint>
-#include "binary_value.h"
 #include "callback.h"
 #include "cancelable_task_runner.h"
 #include "code_evaluator.h"
@@ -15,6 +14,7 @@
 #include "isolate_object_collector.h"
 #include "js_callback_maker.h"
 #include "object_manipulator.h"
+#include "value.h"
 
 namespace MiniRacer {
 
@@ -37,50 +37,49 @@ class Context {
   [[nodiscard]] auto IsHardMemoryLimitReached() const -> bool;
   void ApplyLowMemoryNotification();
 
-  void FreeBinaryValue(BinaryValueHandle* val);
+  void FreeValue(ValueHandle* val);
   template <typename... Params>
-  auto AllocBinaryValue(Params&&... params) -> BinaryValueHandle*;
+  auto AllocValue(Params&&... params) -> ValueHandle*;
   void CancelTask(uint64_t task_id);
-  auto HeapSnapshot() -> BinaryValueHandle*;
-  auto HeapStats() -> BinaryValueHandle*;
-  auto Eval(BinaryValueHandle* code_handle,
+  auto HeapSnapshot() -> ValueHandle*;
+  auto HeapStats() -> ValueHandle*;
+  auto Eval(ValueHandle* code_handle,
 
             uint64_t callback_id) -> uint64_t;
-  auto MakeJSCallback(uint64_t callback_id) -> BinaryValueHandle*;
-  auto GetIdentityHash(BinaryValueHandle* obj_handle) -> BinaryValueHandle*;
-  auto GetOwnPropertyNames(BinaryValueHandle* obj_handle) -> BinaryValueHandle*;
-  auto GetObjectItem(BinaryValueHandle* obj_handle,
-                     BinaryValueHandle* key_handle) -> BinaryValueHandle*;
-  auto SetObjectItem(BinaryValueHandle* obj_handle,
-                     BinaryValueHandle* key_handle,
-                     BinaryValueHandle* val_handle) -> BinaryValueHandle*;
-  auto DelObjectItem(BinaryValueHandle* obj_handle,
-                     BinaryValueHandle* key_handle) -> BinaryValueHandle*;
-  auto SpliceArray(BinaryValueHandle* obj_handle,
+  auto MakeJSCallback(uint64_t callback_id) -> ValueHandle*;
+  auto GetIdentityHash(ValueHandle* obj_handle) -> ValueHandle*;
+  auto GetOwnPropertyNames(ValueHandle* obj_handle) -> ValueHandle*;
+  auto GetObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
+      -> ValueHandle*;
+  auto SetObjectItem(ValueHandle* obj_handle,
+                     ValueHandle* key_handle,
+                     ValueHandle* val_handle) -> ValueHandle*;
+  auto DelObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
+      -> ValueHandle*;
+  auto SpliceArray(ValueHandle* obj_handle,
                    int32_t start,
                    int32_t delete_count,
-                   BinaryValueHandle* new_val_handle) -> BinaryValueHandle*;
-  auto ArrayPush(BinaryValueHandle* obj_handle,
-                 BinaryValueHandle* new_val_handle) -> BinaryValueHandle*;
-  auto CallFunction(BinaryValueHandle* func_handle,
-                    BinaryValueHandle* this_handle,
-                    BinaryValueHandle* argv_handle,
-
+                   ValueHandle* new_val_handle) -> ValueHandle*;
+  auto ArrayPush(ValueHandle* obj_handle, ValueHandle* new_val_handle)
+      -> ValueHandle*;
+  auto CallFunction(ValueHandle* func_handle,
+                    ValueHandle* this_handle,
+                    ValueHandle* argv_handle,
                     uint64_t callback_id) -> uint64_t;
-  auto BinaryValueCount() -> size_t;
+  auto ValueCount() -> size_t;
 
  private:
   template <typename Runnable>
   auto RunTask(Runnable runnable, uint64_t callback_id) -> uint64_t;
 
-  auto MakeHandleConverter(BinaryValueHandle* handle,
-                           const char* err_msg) -> ValueHandleConverter;
+  auto MakeHandleConverter(ValueHandle* handle, const char* err_msg)
+      -> ValueHandleConverter;
 
   IsolateManager isolate_manager_;
   IsolateObjectCollector isolate_object_collector_;
   IsolateMemoryMonitor isolate_memory_monitor_;
-  BinaryValueFactory bv_factory_;
-  BinaryValueRegistry bv_registry_;
+  ValueFactory val_factory_;
+  ValueRegistry val_registry_;
   CallbackFn callback_;
   ContextHolder context_holder_;
   JSCallbackMaker js_callback_maker_;
@@ -92,21 +91,21 @@ class Context {
 
 class ValueHandleConverter {
  public:
-  ValueHandleConverter(BinaryValueFactory* bv_factory,
-                       BinaryValueRegistry* bv_registry,
-                       BinaryValueHandle* handle,
+  ValueHandleConverter(ValueFactory* val_factory,
+                       ValueRegistry* val_registry,
+                       ValueHandle* handle,
                        const char* err_msg);
 
   explicit operator bool() const;
 
-  auto GetErrorPtr() -> BinaryValue::Ptr;
-  auto GetErrorHandle() -> BinaryValueHandle*;
-  auto GetPtr() -> BinaryValue::Ptr;
+  auto GetErrorPtr() -> Value::Ptr;
+  auto GetErrorHandle() -> ValueHandle*;
+  auto GetPtr() -> Value::Ptr;
 
  private:
-  BinaryValueRegistry* bv_registry_;
-  BinaryValue::Ptr ptr_;
-  BinaryValue::Ptr err_;
+  ValueRegistry* val_registry_;
+  Value::Ptr ptr_;
+  Value::Ptr err_;
 };
 
 inline void Context::SetHardMemoryLimit(size_t limit) {
@@ -130,10 +129,9 @@ inline void Context::ApplyLowMemoryNotification() {
 }
 
 template <typename... Params>
-inline auto Context::AllocBinaryValue(Params&&... params)
-    -> BinaryValueHandle* {
-  return bv_registry_.Remember(
-      bv_factory_.New(std::forward<Params>(params)...));
+inline auto Context::AllocValue(Params&&... params) -> ValueHandle* {
+  return val_registry_.Remember(
+      val_factory_.New(std::forward<Params>(params)...));
 }
 
 }  // namespace MiniRacer

@@ -11,21 +11,21 @@
 #include <memory>
 #include <mutex>
 #include <utility>
-#include "binary_value.h"
 #include "callback.h"
 #include "context_holder.h"
 #include "id_maker.h"
+#include "value.h"
 
 namespace MiniRacer {
 
-JSCallbackCaller::JSCallbackCaller(BinaryValueFactory* bv_factory,
+JSCallbackCaller::JSCallbackCaller(ValueFactory* val_factory,
                                    CallbackFn callback)
-    : bv_factory_(bv_factory), callback_(std::move(callback)) {}
+    : val_factory_(val_factory), callback_(std::move(callback)) {}
 
 void JSCallbackCaller::DoCallback(v8::Local<v8::Context> context,
                                   uint64_t callback_id,
                                   v8::Local<v8::Array> args) {
-  const BinaryValue::Ptr args_ptr = bv_factory_->New(context, args);
+  const Value::Ptr args_ptr = val_factory_->New(context, args);
   callback_(callback_id, args_ptr);
 }
 
@@ -41,16 +41,16 @@ auto JSCallbackMaker::GetCallbackCallers()
 }
 
 JSCallbackMaker::JSCallbackMaker(ContextHolder* context_holder,
-                                 BinaryValueFactory* bv_factory,
+                                 ValueFactory* val_factory,
                                  CallbackFn callback)
     : context_holder_(context_holder),
-      bv_factory_(bv_factory),
+      val_factory_(val_factory),
       callback_caller_holder_(
-          std::make_shared<JSCallbackCaller>(bv_factory, std::move(callback)),
+          std::make_shared<JSCallbackCaller>(val_factory, std::move(callback)),
           GetCallbackCallers()) {}
 
 auto JSCallbackMaker::MakeJSCallback(v8::Isolate* isolate,
-                                     uint64_t callback_id) -> BinaryValue::Ptr {
+                                     uint64_t callback_id) -> Value::Ptr {
   const v8::Isolate::Scope isolate_scope(isolate);
   const v8::HandleScope handle_scope(isolate);
   const v8::Local<v8::Context> context = context_holder_->Get()->Get(isolate);
@@ -80,7 +80,7 @@ auto JSCallbackMaker::MakeJSCallback(v8::Isolate* isolate,
       v8::Function::New(context, &JSCallbackMaker::OnCalledStatic, data)
           .ToLocalChecked();
 
-  return bv_factory_->New(context, func);
+  return val_factory_->New(context, func);
 }
 
 void JSCallbackMaker::OnCalledStatic(

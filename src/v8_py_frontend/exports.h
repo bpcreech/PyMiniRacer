@@ -3,8 +3,8 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "binary_value.h"
 #include "callback.h"
+#include "value.h"
 
 #ifdef V8_OS_WIN
 #define LIB_EXPORT __declspec(dllexport)
@@ -33,7 +33,7 @@ LIB_EXPORT auto mr_v8_is_using_sandbox() -> bool;
  *
  * A MiniRacer context is an isolated JavaScript execution envrionment. It
  * contains one v8::Isolate, one v8::Context, one message loop thread, and
- * one pool of BinaryValueHandles and asynchronous tasks.
+ * one pool of ValueHandles and asynchronous tasks.
  *
  * The given callback function pointer must point to valid memory for the
  * the entire lifetime of this context (assuming any async tasks are started
@@ -50,7 +50,7 @@ LIB_EXPORT auto mr_init_context(MiniRacer::RawCallback callback) -> uint64_t;
 /** Free a MiniRacer context.
  *
  * This shuts down the v8::ISolate, v8::Context, the message loop thread, and
- * frees any remaining BinaryValueHandles and asynchronous task handles.
+ * frees any remaining ValueHandles and asynchronous task handles.
  **/
 LIB_EXPORT void mr_free_context(uint64_t context_id);
 
@@ -84,9 +84,9 @@ LIB_EXPORT void mr_low_memory_notification(uint64_t context_id);
  * and passed to the C callback.
  **/
 LIB_EXPORT auto mr_make_js_callback(uint64_t context_id, uint64_t callback_id)
-    -> MiniRacer::BinaryValueHandle*;
+    -> MiniRacer::ValueHandle*;
 
-/** Allocate a BinaryValueHandle containing the given int or int-like data.
+/** Allocate a ValueHandle containing the given int or int-like data.
  *
  * If used as an argument in another call, this value will be rendered into
  * JavaScript as boolean, number, undefined, or null, depending on the specified
@@ -94,20 +94,20 @@ LIB_EXPORT auto mr_make_js_callback(uint64_t context_id, uint64_t callback_id)
  **/
 LIB_EXPORT auto mr_alloc_int_val(uint64_t context_id,
                                  int64_t val,
-                                 MiniRacer::BinaryTypes type)
-    -> MiniRacer::BinaryValueHandle*;
+                                 MiniRacer::ValueTypes type)
+    -> MiniRacer::ValueHandle*;
 
-/** Allocate a BinaryValueHandle containing the given double-precision number.
+/** Allocate a ValueHandle containing the given double-precision number.
  *
  * If used as an argument in another call, this value will be rendered into
  * JavaScript as a number or Date, depending on the specified type.
  **/
 LIB_EXPORT auto mr_alloc_double_val(uint64_t context_id,
                                     double val,
-                                    MiniRacer::BinaryTypes type)
-    -> MiniRacer::BinaryValueHandle*;
+                                    MiniRacer::ValueTypes type)
+    -> MiniRacer::ValueHandle*;
 
-/** Allocate a BinaryValueHandle pointing to a copy of the given utf-8 string.
+/** Allocate a ValueHandle pointing to a copy of the given utf-8 string.
  *
  * If used as an argument in another call, this value will be rendered into
  * JavaScript as an ordinary string. Only type type_str_utf8 is supported.
@@ -115,14 +115,14 @@ LIB_EXPORT auto mr_alloc_double_val(uint64_t context_id,
 LIB_EXPORT auto mr_alloc_string_val(uint64_t context_id,
                                     char* val,
                                     uint64_t len,
-                                    MiniRacer::BinaryTypes type)
-    -> MiniRacer::BinaryValueHandle*;
+                                    MiniRacer::ValueTypes type)
+    -> MiniRacer::ValueHandle*;
 
-/** Free the value pointed to by a BinaryValueHandle. */
+/** Free the value pointed to by a ValueHandle. */
 LIB_EXPORT void mr_free_value(uint64_t context_id,
-                              MiniRacer::BinaryValueHandle* val_handle);
+                              MiniRacer::ValueHandle* val_handle);
 
-/** Count the number of BinaryValueHandles which have been produced by the given
+/** Count the number of ValueHandles which have been produced by the given
  *context and not freed yet.
  *
  * This function is intended for use in debugging only.
@@ -131,16 +131,16 @@ LIB_EXPORT auto mr_value_count(uint64_t context_id) -> size_t;
 
 /** Get the V8 object identity hash for the given object. **/
 LIB_EXPORT auto mr_get_identity_hash(uint64_t context_id,
-                                     MiniRacer::BinaryValueHandle* obj_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                                     MiniRacer::ValueHandle* obj_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `Object.getOwnPropertyNames()`.
  *
  * Returns an array of names, or an exception in case of error.
  **/
-LIB_EXPORT auto mr_get_own_property_names(
-    uint64_t context_id,
-    MiniRacer::BinaryValueHandle* obj_handle) -> MiniRacer::BinaryValueHandle*;
+LIB_EXPORT auto mr_get_own_property_names(uint64_t context_id,
+                                          MiniRacer::ValueHandle* obj_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `obj[key]`.
  *
@@ -150,36 +150,36 @@ LIB_EXPORT auto mr_get_own_property_names(
  * found.
  **/
 LIB_EXPORT auto mr_get_object_item(uint64_t context_id,
-                                   MiniRacer::BinaryValueHandle* obj_handle,
-                                   MiniRacer::BinaryValueHandle* key_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                                   MiniRacer::ValueHandle* obj_handle,
+                                   MiniRacer::ValueHandle* key_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `obj[key] = val`.
  *
- * Returns a MiniRacer::BinaryValueHandle* which is normally true except in
+ * Returns a MiniRacer::ValueHandle* which is normally true except in
  * case of deletion failure, or an exception in case of error.
  *
  * Returns an exception of type type_key_exception if the key cannot be
  * found.
  **/
 LIB_EXPORT auto mr_set_object_item(uint64_t context_id,
-                                   MiniRacer::BinaryValueHandle* obj_handle,
-                                   MiniRacer::BinaryValueHandle* key_handle,
-                                   MiniRacer::BinaryValueHandle* val_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                                   MiniRacer::ValueHandle* obj_handle,
+                                   MiniRacer::ValueHandle* key_handle,
+                                   MiniRacer::ValueHandle* val_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `delete obj[key]`.
  *
- * Returns a MiniRacer::BinaryValueHandle* which is normally true except in
+ * Returns a MiniRacer::ValueHandle* which is normally true except in
  * case of deletion failure, or an exception in case of error.
  *
  * Returns an exception of type type_key_exception if the key cannot be
  * found.
  **/
 LIB_EXPORT auto mr_del_object_item(uint64_t context_id,
-                                   MiniRacer::BinaryValueHandle* obj_handle,
-                                   MiniRacer::BinaryValueHandle* key_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                                   MiniRacer::ValueHandle* obj_handle,
+                                   MiniRacer::ValueHandle* key_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `Array.prototype.splice(array, start, delete_count,
  * [new_val])`.
@@ -191,11 +191,11 @@ LIB_EXPORT auto mr_del_object_item(uint64_t context_id,
  * containing the deleted elements, or an exception in case of failure.
  **/
 LIB_EXPORT auto mr_splice_array(uint64_t context_id,
-                                MiniRacer::BinaryValueHandle* array_handle,
+                                MiniRacer::ValueHandle* array_handle,
                                 int32_t start,
                                 int32_t delete_count,
-                                MiniRacer::BinaryValueHandle* new_val_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                                MiniRacer::ValueHandle* new_val_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Call JavaScript `Array.prototype.push(array, new_val)`.
  *
@@ -203,9 +203,9 @@ LIB_EXPORT auto mr_splice_array(uint64_t context_id,
  * in case of failure.
  **/
 LIB_EXPORT auto mr_array_push(uint64_t context_id,
-                              MiniRacer::BinaryValueHandle* array_handle,
-                              MiniRacer::BinaryValueHandle* new_val_handle)
-    -> MiniRacer::BinaryValueHandle*;
+                              MiniRacer::ValueHandle* array_handle,
+                              MiniRacer::ValueHandle* new_val_handle)
+    -> MiniRacer::ValueHandle*;
 
 /** Cancel the given asynchronous task.
  *
@@ -218,7 +218,7 @@ LIB_EXPORT void mr_cancel_task(uint64_t context_id, uint64_t task_id);
  * Code can be evaluated by, e.g., mr_alloc_string_val.
  *
  * This call is processed asynchronously and as such accepts a callback ID.
- * The callback ID and a MiniRacer::BinaryValueHandle* containing the
+ * The callback ID and a MiniRacer::ValueHandle* containing the
  * evaluation result are passed back to the callback upon completion. A task ID
  * is returned which can be passed back to mr_cancel_task to cancel evaluation.
  *
@@ -228,35 +228,34 @@ LIB_EXPORT void mr_cancel_task(uint64_t context_id, uint64_t task_id);
  * result.
  */
 LIB_EXPORT auto mr_eval(uint64_t context_id,
-                        MiniRacer::BinaryValueHandle* code_handle,
+                        MiniRacer::ValueHandle* code_handle,
                         uint64_t callback_id) -> uint64_t;
 
 /** Call JavaScript `func.call(this, ...argv)`.
  *
  * This call is processed asynchronously and as such accepts a callback ID.
- * The callback ID and a MiniRacer::BinaryValueHandle* containing the
+ * The callback ID and a MiniRacer::ValueHandle* containing the
  * evaluation result are passed back to the callback upon completion. A task ID
  * is returned which can be passed back to mr_cancel_task to cancel evaluation.
  **/
 LIB_EXPORT auto mr_call_function(uint64_t context_id,
-                                 MiniRacer::BinaryValueHandle* func_handle,
-                                 MiniRacer::BinaryValueHandle* this_handle,
-                                 MiniRacer::BinaryValueHandle* argv_handle,
+                                 MiniRacer::ValueHandle* func_handle,
+                                 MiniRacer::ValueHandle* this_handle,
+                                 MiniRacer::ValueHandle* argv_handle,
                                  uint64_t callback_id) -> uint64_t;
 
 /** Get stats for the V8 heap.
  *
  * This function is intended for use in debugging only.
  **/
-LIB_EXPORT auto mr_heap_stats(uint64_t context_id)
-    -> MiniRacer::BinaryValueHandle*;
+LIB_EXPORT auto mr_heap_stats(uint64_t context_id) -> MiniRacer::ValueHandle*;
 
 /** Get a snapshot of the V8 heap.
  *
  * This function is intended for use in debugging only.
  **/
 LIB_EXPORT auto mr_heap_snapshot(uint64_t context_id)
-    -> MiniRacer::BinaryValueHandle*;
+    -> MiniRacer::ValueHandle*;
 
 // NOLINTEND(bugprone-easily-swappable-parameters)
 

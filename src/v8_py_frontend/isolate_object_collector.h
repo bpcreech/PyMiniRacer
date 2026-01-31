@@ -28,11 +28,11 @@ class IsolateObjectCollector {
   ~IsolateObjectCollector();
 
   IsolateObjectCollector(const IsolateObjectCollector&) = delete;
-  auto operator=(const IsolateObjectCollector&)
-      -> IsolateObjectCollector& = delete;
+  auto operator=(const IsolateObjectCollector&) -> IsolateObjectCollector& =
+                                                       delete;
   IsolateObjectCollector(IsolateObjectCollector&&) = delete;
-  auto operator=(IsolateObjectCollector&& other)
-      -> IsolateObjectCollector& = delete;
+  auto operator=(IsolateObjectCollector&& other) -> IsolateObjectCollector& =
+                                                        delete;
 
   template <typename T>
   void Collect(T* obj);
