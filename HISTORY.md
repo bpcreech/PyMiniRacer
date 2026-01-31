@@ -1,5 +1,13 @@
 # History
 
+## 0.14.1 (2026-01-31)
+
+- Fix memory leak when tracking JS objects in Python. We were never calling
+  v8::Persistent::Reset(). Now we use v8::Global which has no such requirement.
+- In the C++ implementation, rename BinaryValue to just Value and optimize things a bit
+  by collapsing various data members into a Variant.
+- Upgrade to V8 14.4 from 14.3.
+
 ## 0.14.0 (2026-01-03)
 
 - Major revamp of Python-side async handling: `PyMiniRacer` now manages most

@@ -106,8 +106,8 @@ class Value {
 
   using Ptr = std::shared_ptr<Value>;
 
-  auto ToV8Value(v8::Isolate* isolate, v8::Local<v8::Context> context)
-      -> v8::Local<v8::Value>;
+  auto ToV8Value(v8::Isolate* isolate,
+                 v8::Local<v8::Context> context) -> v8::Local<v8::Value>;
 
   friend class ValueRegistry;
 
