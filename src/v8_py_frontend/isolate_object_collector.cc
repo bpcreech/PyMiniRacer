@@ -24,15 +24,13 @@ void IsolateObjectCollector::EnqueueCollectionBatchLocked() {
 }
 
 void IsolateObjectCollector::DoCollection() {
-  std::vector<std::function<void()>> batch;
+  std::vector<v8::Global<v8::Value>> batch;
   {
     const std::lock_guard<std::mutex> lock(mutex_);
     batch = std::exchange(garbage_, {});
   }
 
-  for (const auto& collector : batch) {
-    collector();
-  }
+  batch.clear();
 
   const std::lock_guard<std::mutex> lock(mutex_);
   if (garbage_.empty()) {
@@ -44,11 +42,16 @@ void IsolateObjectCollector::DoCollection() {
   EnqueueCollectionBatchLocked();
 }
 
-IsolateObjectDeleter::IsolateObjectDeleter()
-    : isolate_object_collector_(nullptr) {}
+void IsolateObjectCollector::Collect(v8::Global<v8::Value> global) {
+  const std::lock_guard<std::mutex> lock(mutex_);
 
-IsolateObjectDeleter::IsolateObjectDeleter(
-    IsolateObjectCollector* isolate_object_collector)
-    : isolate_object_collector_(isolate_object_collector) {}
+  garbage_.push_back(std::move(global));
 
+  if (is_collecting_) {
+    // There is already a collection in progress.
+    return;
+  }
+
+  EnqueueCollectionBatchLocked();
+}
 }  // end namespace MiniRacer
