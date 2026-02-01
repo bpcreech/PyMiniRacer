@@ -39,11 +39,11 @@ class CancelableTaskManager {
   ~CancelableTaskManager();
 
   CancelableTaskManager(const CancelableTaskManager&) = delete;
-  auto operator=(const CancelableTaskManager&)
-      -> CancelableTaskManager& = delete;
+  auto operator=(const CancelableTaskManager&) -> CancelableTaskManager& =
+                                                      delete;
   CancelableTaskManager(CancelableTaskManager&&) = delete;
-  auto operator=(CancelableTaskManager&& other)
-      -> CancelableTaskManager& = delete;
+  auto operator=(CancelableTaskManager&& other) -> CancelableTaskManager& =
+                                                       delete;
 
   /**
    * Schedule the given runnable.

@@ -135,6 +135,14 @@ respectively:
     [None, JSUndefined]
 ```
 
+JavaScript strings are represented as `JSString`, a subclass of `str` which enables them
+to be efficiently passed back to JavaScript:
+
+```python
+    >>> from py_mini_racer import JSString
+    >>> assert isinstance(ctx.eval("'foo'"), JSString)
+```
+
 You can prevent runaway execution in synchronous code using the `timeout_sec` parameter:
 
 ```python

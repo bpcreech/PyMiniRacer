@@ -49,19 +49,19 @@ class Context {
   auto MakeJSCallback(uint64_t callback_id) -> ValueHandle*;
   auto GetIdentityHash(ValueHandle* obj_handle) -> ValueHandle*;
   auto GetOwnPropertyNames(ValueHandle* obj_handle) -> ValueHandle*;
-  auto GetObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
-      -> ValueHandle*;
+  auto GetObjectItem(ValueHandle* obj_handle,
+                     ValueHandle* key_handle) -> ValueHandle*;
   auto SetObjectItem(ValueHandle* obj_handle,
                      ValueHandle* key_handle,
                      ValueHandle* val_handle) -> ValueHandle*;
-  auto DelObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
-      -> ValueHandle*;
+  auto DelObjectItem(ValueHandle* obj_handle,
+                     ValueHandle* key_handle) -> ValueHandle*;
   auto SpliceArray(ValueHandle* obj_handle,
                    int32_t start,
                    int32_t delete_count,
                    ValueHandle* new_val_handle) -> ValueHandle*;
-  auto ArrayPush(ValueHandle* obj_handle, ValueHandle* new_val_handle)
-      -> ValueHandle*;
+  auto ArrayPush(ValueHandle* obj_handle,
+                 ValueHandle* new_val_handle) -> ValueHandle*;
   auto CallFunction(ValueHandle* func_handle,
                     ValueHandle* this_handle,
                     ValueHandle* argv_handle,

@@ -8,7 +8,7 @@ from traceback import format_exc
 from typing import TYPE_CHECKING, Any, NewType, Protocol, cast
 
 from py_mini_racer._dll import init_mini_racer
-from py_mini_racer._exc import JSEvalException, JSPromiseError
+from py_mini_racer._exc import JSPromiseError
 from py_mini_racer._types import (
     CancelableJSFunction,
     JSArray,

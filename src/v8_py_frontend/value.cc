@@ -140,8 +140,8 @@ auto Value::GetHandle() -> ValueHandle* {
 ValueFactory::ValueFactory(IsolateManager* isolate_manager)
     : isolate_manager_(isolate_manager) {}
 
-auto ValueFactory::New(v8::Local<v8::Value> value, ValueTypes type)
-    -> Value::Ptr {
+auto ValueFactory::New(v8::Local<v8::Value> value,
+                       ValueTypes type) -> Value::Ptr {
   const v8::Local<v8::Context> context = isolate_manager_->GetLocalContext();
   return std::make_unique<Value>(isolate_manager_->GetIsolate(), context, value,
                                  type);
@@ -176,8 +176,8 @@ auto ValueFactory::NewFromDouble(double value, ValueTypes type) -> Value::Ptr {
   return New(v8::Number::New(isolate_manager_->GetIsolate(), value), type);
 }
 
-auto ValueFactory::NewFromString(std::string_view message, ValueTypes type)
-    -> Value::Ptr {
+auto ValueFactory::NewFromString(std::string_view message,
+                                 ValueTypes type) -> Value::Ptr {
   return New(v8::String::NewFromUtf8(isolate_manager_->GetIsolate(),
                                      message.data(), v8::NewStringType::kNormal,
                                      static_cast<int>(message.size()))

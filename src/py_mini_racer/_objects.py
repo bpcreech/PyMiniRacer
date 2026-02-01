@@ -26,6 +26,7 @@ from py_mini_racer._types import (
     JSMappedObject,
     JSObject,
     JSPromise,
+    JSString,
     JSSymbol,
     JSUndefined,
     JSUndefinedType,
@@ -34,6 +35,8 @@ from py_mini_racer._types import (
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator, Sequence
+
+    from typing_extensions import Self
 
     from py_mini_racer._context import Context
     from py_mini_racer._dll import RawValueHandleTypeImpl
@@ -192,6 +195,16 @@ class JSPromiseImpl(JSObjectImpl, JSPromise):
         return self._ctx.await_promise(self).__await__()
 
 
+class JSStringImpl(JSObjectImpl, JSString):
+    def __new__(cls, ctx: Context, handle: ValueHandle, content: str) -> Self:
+        del ctx, handle
+        return super().__new__(cls, content)
+
+    def __init__(self, ctx: Context, handle: ValueHandle, content: str) -> None:
+        del content
+        JSObjectImpl.__init__(self, ctx, handle)
+
+
 class _ArrayBufferByte(ctypes.Structure):
     # Cannot use c_ubyte directly because it uses <B
     # as an internal type but we need B for memoryview.
@@ -300,7 +313,9 @@ class ObjectFactoryImpl:
         if typ == _MiniRacerTypes.double:
             return float(val.double_val)
         if typ == _MiniRacerTypes.string:
-            return str(val.bytes_val[0:length].decode("utf-8"))
+            return JSStringImpl(
+                ctx, val_handle, val.bytes_val[0:length].decode("utf-8")
+            )
         if typ == _MiniRacerTypes.function:
             return JSFunctionImpl(ctx, val_handle)
         if typ == _MiniRacerTypes.date:

@@ -137,8 +137,8 @@ auto Context::GetOwnPropertyNames(ValueHandle* obj_handle) -> ValueHandle* {
       .get();
 }
 
-auto Context::GetObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
-    -> ValueHandle* {
+auto Context::GetObjectItem(ValueHandle* obj_handle,
+                            ValueHandle* key_handle) -> ValueHandle* {
   return isolate_manager_
       .Schedule([this, obj_handle, key_handle]() mutable {
         auto* obj_value = val_registry_.FromHandle(obj_handle);
@@ -183,8 +183,8 @@ auto Context::SetObjectItem(ValueHandle* obj_handle,
       .get();
 }
 
-auto Context::DelObjectItem(ValueHandle* obj_handle, ValueHandle* key_handle)
-    -> ValueHandle* {
+auto Context::DelObjectItem(ValueHandle* obj_handle,
+                            ValueHandle* key_handle) -> ValueHandle* {
   return isolate_manager_
       .Schedule([this, obj_handle, key_handle]() mutable {
         auto* obj_value = val_registry_.FromHandle(obj_handle);
@@ -228,8 +228,8 @@ auto Context::SpliceArray(ValueHandle* obj_handle,
       .get();
 }
 
-auto Context::ArrayPush(ValueHandle* obj_handle, ValueHandle* new_val_handle)
-    -> ValueHandle* {
+auto Context::ArrayPush(ValueHandle* obj_handle,
+                        ValueHandle* new_val_handle) -> ValueHandle* {
   return isolate_manager_
       .Schedule([this, obj_handle, new_val_handle]() {
         auto* obj_value = val_registry_.FromHandle(obj_handle);
@@ -268,8 +268,8 @@ auto Context::AllocDouble(double val, ValueTypes type) -> ValueHandle* {
       .get();
 }
 
-auto Context::AllocString(std::string_view val, ValueTypes type)
-    -> ValueHandle* {
+auto Context::AllocString(std::string_view val,
+                          ValueTypes type) -> ValueHandle* {
   return isolate_manager_
       .Schedule([this, val, type]() {
         return val_registry_.Remember(val_factory_.NewFromString(val, type));

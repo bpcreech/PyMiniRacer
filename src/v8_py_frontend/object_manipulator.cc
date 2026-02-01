@@ -59,8 +59,9 @@ auto ObjectManipulator::Get(Value* obj_ptr, Value* key_ptr) -> Value::Ptr {
   return val_factory_->NewFromAny(value);
 }
 
-auto ObjectManipulator::Set(Value* obj_ptr, Value* key_ptr, Value* val_ptr)
-    -> Value::Ptr {
+auto ObjectManipulator::Set(Value* obj_ptr,
+                            Value* key_ptr,
+                            Value* val_ptr) -> Value::Ptr {
   v8::Isolate* isolate = isolate_manager_->GetIsolate();
 
   const v8::Local<v8::Value> local_obj_val = obj_ptr->Global()->Get(isolate);
@@ -182,8 +183,9 @@ auto ObjectManipulator::Push(Value* obj_ptr, Value* new_val_ptr) -> Value::Ptr {
   return val_factory_->NewFromAny(maybe_value.ToLocalChecked());
 }
 
-auto ObjectManipulator::Call(Value* func_ptr, Value* this_ptr, Value* argv_ptr)
-    -> Value::Ptr {
+auto ObjectManipulator::Call(Value* func_ptr,
+                             Value* this_ptr,
+                             Value* argv_ptr) -> Value::Ptr {
   v8::Isolate* isolate = isolate_manager_->GetIsolate();
 
   const v8::Local<v8::Value> local_func_val = func_ptr->Global()->Get(isolate);

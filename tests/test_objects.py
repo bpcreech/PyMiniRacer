@@ -9,6 +9,7 @@ from py_mini_racer import (
     JSFunction,
     JSObject,
     JSPromise,
+    JSString,
     JSSymbol,
     JSUndefined,
     MiniRacer,
@@ -56,7 +57,12 @@ a
         ("null", "null_value"),
         ("undefined", "undef_value"),
     ]
-    assert set(obj.values()) == {42, "key_is_number", "undef_value", "null_value"}
+    assert {str(s) if isinstance(s, JSString) else s for s in obj.values()} == {
+        42,
+        "key_is_number",
+        "undef_value",
+        "null_value",
+    }
     obj2 = mr.eval(
         """\
 var a = {
