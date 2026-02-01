@@ -110,7 +110,7 @@ LIB_EXPORT auto mr_alloc_double_val(uint64_t context_id,
 /** Allocate a ValueHandle pointing to a copy of the given utf-8 string.
  *
  * If used as an argument in another call, this value will be rendered into
- * JavaScript as an ordinary string. Only type type_str_utf8 is supported.
+ * JavaScript as an ordinary string.
  **/
 LIB_EXPORT auto mr_alloc_string_val(uint64_t context_id,
                                     char* val,

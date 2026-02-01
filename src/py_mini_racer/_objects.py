@@ -210,7 +210,7 @@ class _MiniRacerTypes:
     bool = 2
     integer = 3
     double = 4
-    str_utf8 = 5
+    string = 5
     array = 6
     # deprecated:
     hash = 7
@@ -222,7 +222,8 @@ class _MiniRacerTypes:
     function = 100
     shared_array_buffer = 101
     array_buffer = 102
-    promise = 103
+    array_buffer_view = 103
+    promise = 104
 
     execute_exception = 200
     parse_exception = 201
@@ -298,7 +299,7 @@ class ObjectFactoryImpl:
             return int(val.int_val)
         if typ == _MiniRacerTypes.double:
             return float(val.double_val)
-        if typ == _MiniRacerTypes.str_utf8:
+        if typ == _MiniRacerTypes.string:
             return str(val.bytes_val[0:length].decode("utf-8"))
         if typ == _MiniRacerTypes.function:
             return JSFunctionImpl(ctx, val_handle)
@@ -308,7 +309,11 @@ class ObjectFactoryImpl:
             return datetime.fromtimestamp(timestamp / 1000.0, timezone.utc)
         if typ == _MiniRacerTypes.symbol:
             return JSSymbolImpl(ctx, val_handle)
-        if typ in (_MiniRacerTypes.shared_array_buffer, _MiniRacerTypes.array_buffer):
+        if typ in (
+            _MiniRacerTypes.shared_array_buffer,
+            _MiniRacerTypes.array_buffer,
+            _MiniRacerTypes.array_buffer_view,
+        ):
             buf = _ArrayBufferByte * length
             cdata = buf.from_address(val.value_ptr)
             # Save a reference to the context to prevent garbage collection of the
@@ -328,7 +333,8 @@ class ObjectFactoryImpl:
         if typ == _MiniRacerTypes.object:
             return JSMappedObjectImpl(ctx, val_handle)
 
-        raise JSConversionException
+        msg = f"Unrecognized type {typ}"
+        raise JSConversionException(msg)
 
     def python_to_value_handle(  # noqa: PLR0911
         self, ctx: Context, obj: PythonJSConvertedTypes
@@ -360,7 +366,7 @@ class ObjectFactoryImpl:
         if isinstance(obj, float):
             return ctx.create_doublish_val(obj, _MiniRacerTypes.double)
         if isinstance(obj, str):
-            return ctx.create_string_val(obj, _MiniRacerTypes.str_utf8)
+            return ctx.create_string_val(obj, _MiniRacerTypes.string)
         if isinstance(obj, datetime):
             # JS timestamps are milliseconds. In Python we are in seconds:
             return ctx.create_doublish_val(

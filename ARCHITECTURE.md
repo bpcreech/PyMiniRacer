@@ -431,7 +431,7 @@ For now at least, we instead use raw pointers for this case.
 We still don't fully trust Python with the lifecyce of `ValueHandle` pointers; when
 Python passes these pointers back to C++, we still check validity by looking up the
 pointer as a key into a map (which then lets the C++ side of PyMiniRacer find the _rest_
-of the `Value` object). The C++ `MiniRacer::ValueFactory` can authoritatively destruct
+of the `Value` object). The C++ `MiniRacer::ValueRegistry` can authoritatively destruct
 any dangling `Value` objects when it exits.
 
 This last especially helps with an odd scenario introduced by Python `__del__`: the

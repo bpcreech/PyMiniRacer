@@ -1,7 +1,11 @@
 #ifndef INCLUDE_MINI_RACER_ISOLATE_MANAGER_H
 #define INCLUDE_MINI_RACER_ISOLATE_MANAGER_H
 
+#include <v8-array-buffer.h>
+#include <v8-context.h>
 #include <v8-isolate.h>
+#include <v8-local-handle.h>
+#include <v8-persistent-handle.h>
 #include <v8-platform.h>
 #include <atomic>
 #include <cstdint>
@@ -10,27 +14,28 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
-#include "isolate_holder.h"
 
 namespace MiniRacer {
+
+class IsolateManager;
 
 /** Wraps up a runnable to run on a v8::Isolate's foreground task runner thread
  * . */
 template <typename Runnable>
 class IsolateTask : public v8::Task {
  public:
-  using ReturnType = std::invoke_result_t<Runnable, v8::Isolate*>;
+  using ReturnType = std::invoke_result_t<Runnable>;
   using FutureType = std::future<ReturnType>;
 
-  explicit IsolateTask(Runnable runnable, v8::Isolate* isolate);
+  explicit IsolateTask(Runnable runnable, IsolateManager* isolate_manager);
 
   void Run() override;
 
   auto GetFuture() -> FutureType;
 
  private:
-  std::packaged_task<ReturnType(v8::Isolate*)> packaged_task_;
-  v8::Isolate* isolate_;
+  std::packaged_task<ReturnType()> packaged_task_;
+  IsolateManager* isolate_manager_;
 };
 
 /** Owns a v8::Isolate and mediates access to it via a task queue.
@@ -55,7 +60,8 @@ class IsolateManager {
   IsolateManager(IsolateManager&&) = delete;
   auto operator=(IsolateManager&& other) -> IsolateManager& = delete;
 
-  auto Get() -> v8::Isolate*;
+  auto GetIsolate() -> v8::Isolate*;
+  auto GetLocalContext() -> v8::Local<v8::Context>;
 
   /** Schedules a task to run on the foreground thread, using
    * v8::TaskRunner::PostTask. Returns a future which gets the result.
@@ -63,8 +69,8 @@ class IsolateManager {
    * runnable outlive the task, by awaiting the returned future before tearing
    * down any referred-to objects. */
   template <typename Runnable>
-  [[nodiscard]] auto Run(Runnable runnable)
-      -> IsolateTask<Runnable>::FutureType;
+  [[nodiscard]] auto Schedule(Runnable runnable) ->
+      typename IsolateTask<Runnable>::FutureType;
 
   void TerminateOngoingTask();
 
@@ -82,38 +88,48 @@ class IsolateManager {
 
   v8::Platform* platform_;
   std::atomic<State> state_;
-  IsolateHolder isolate_holder_;
+  std::unique_ptr<v8::ArrayBuffer::Allocator> allocator_;
+  v8::Isolate* isolate_;
   std::thread thread_;
+  v8::Global<v8::Context> context_;
 };
 
-inline auto IsolateManager::Get() -> v8::Isolate* {
-  return isolate_holder_.Get();
+inline auto IsolateManager::GetIsolate() -> v8::Isolate* {
+  return isolate_;
+}
+
+inline auto IsolateManager::GetLocalContext() -> v8::Local<v8::Context> {
+  return context_.Get(isolate_);
 }
 
 /** Schedules a task to run on the foreground thread, using
  * v8::TaskRunner::PostTask. Awaits task completion. */
 template <typename Runnable>
-inline auto IsolateManager::Run(Runnable runnable)
-    -> IsolateTask<Runnable>::FutureType {
-  auto task = std::make_unique<IsolateTask<Runnable>>(std::move(runnable),
-                                                      isolate_holder_.Get());
+inline auto IsolateManager::Schedule(Runnable runnable) ->
+    typename IsolateTask<Runnable>::FutureType {
+  auto task =
+      std::make_unique<IsolateTask<Runnable>>(std::move(runnable), this);
 
   auto fut = task->GetFuture();
 
-  platform_->GetForegroundTaskRunner(isolate_holder_.Get())
-      ->PostTask(std::move(task));
+  platform_->GetForegroundTaskRunner(isolate_)->PostTask(std::move(task));
 
   return fut;
 }
 
 template <typename Runnable>
 inline IsolateTask<Runnable>::IsolateTask(Runnable runnable,
-                                          v8::Isolate* isolate)
-    : packaged_task_(std::move(runnable)), isolate_(isolate) {}
+                                          IsolateManager* isolate_manager)
+    : packaged_task_(std::move(runnable)), isolate_manager_(isolate_manager) {}
 
 template <typename Runnable>
 inline void IsolateTask<Runnable>::Run() {
-  packaged_task_(isolate_);
+  v8::Isolate* isolate = isolate_manager_->GetIsolate();
+  const v8::HandleScope handle_scope(isolate);
+  const v8::Local<v8::Context> context = isolate_manager_->GetLocalContext();
+  const v8::Context::Scope context_scope(context);
+
+  packaged_task_();
 }
 
 template <typename Runnable>
