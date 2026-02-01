@@ -1,0 +1,1730 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://bpcreech.com/PyMiniRacer/architecture/">
+      
+      
+        <link rel="prev" href="../contributing/">
+      
+      
+        <link rel="next" href="../authors/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Architecture - PyMiniRacer</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PyMiniRacer" class="md-header__button md-logo" aria-label="PyMiniRacer" data-md-component="logo">
+      
+  <img src="../py_mini_racer.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyMiniRacer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PyMiniRacer" class="md-nav__button md-logo" aria-label="PyMiniRacer" data-md-component="logo">
+      
+  <img src="../py_mini_racer.png" alt="logo">
+
+    </a>
+    PyMiniRacer
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pyminiracer-should-be-able-to-run-untrusted-javascript-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PyMiniRacer should be able to run untrusted JavaScript code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#javascript-to-python-callbacks-may-breach-any-isolation-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JavaScript-to-Python callbacks may breach any isolation boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#brief-catalog-of-key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brief catalog of key components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Brief catalog of key components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        docs/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#justfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Justfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setuppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setup.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#builderv8_buildpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        builder/v8_build.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srcv8_py_frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/v8_py_frontend/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-srcpy_mini_racerlibmini_racerso-srcpy_mini_racermini_racerdll-srcpy_mini_racerlibmini_racerdylib" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Compiled) src/py_mini_racer/libmini_racer.so, src/py_mini_racer/mini_racer.dll, src/py_mini_racer/libmini_racer.dylib
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-srcpy_mini_racericudtldat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Compiled) src/py_mini_racer/icudtl.dat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defunct-srcpy_mini_racersnapshot_blobbin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Defunct) src/py_mini_racer/snapshot_blob.bin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srcpy_mini_racer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/py_mini_racer/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#githubworkflowsbuildyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/workflows/build.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minimize-the-interface-with-v8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize the interface with V8
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-v8-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build V8 from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-pypi-wheels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build PyPI wheels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-the-free-github-actions-hosted-runners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use the free GitHub Actions hosted runners
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-interface-with-the-cpython-api-dont-make-an-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't interface with the CPython API (don't make an extension)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-use-cibuildwheel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't use cibuildwheel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-with-cross-compile-for-aarch64-on-linux-and-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build with cross-compile for aarch64 on Linux and Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-for-alpine-as-a-cross-compatible-glibc-binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build for Alpine as a cross-compatible glibc binary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-v8-with-our-frontend-v8_py_frontend-as-a-snuck-in-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build V8 with our frontend (v8_py_frontend) as a snuck-in component
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buggy-or-adversarial-javascript-shouldnt-be-able-to-crash-or-otherwise-disrupt-things" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buggy or adversarial JavaScript shouldn't be able to crash or otherwise disrupt things
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-trust-javascript-with-memory-management-of-c-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't trust JavaScript with memory management of C++ objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#any-raw-c-object-pointers-and-references-given-to-javascript-must-outlive-the-v8isolate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Any raw C++ object pointers and references given to JavaScript must outlive the v8::Isolate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-javascript-integer-ids-to-track-any-allocated-objects-on-the-c-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use JavaScript integer IDs to track any allocated objects on the C++ side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buggy-python-shouldnt-be-able-to-crash-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buggy Python shouldn't be able to crash C++
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minimize-trust-of-python-in-automatic-memory-management-of-c-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize trust of Python in automatic memory management of C++ objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minimize-trust-of-python-in-handing-cc-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize trust of Python in handing C/C++ pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-python-integer-ids-to-track-any-allocated-objects-on-the-c-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Python integer IDs to track any allocated objects on the C++ side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#except-for-valuehandle-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ... except for ValueHandle pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#only-touch-most-of-the-v8isolate-from-within-the-message-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Only touch (most of) the v8::Isolate from within the message loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-any-c-code-creates-an-isolate-task-its-responsible-for-awaiting-its-completion-before-teardown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If any C++ code creates an Isolate task, it's responsible for awaiting its completion before teardown
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pyminiracer-should-be-able-to-run-untrusted-javascript-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PyMiniRacer should be able to run untrusted JavaScript code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#javascript-to-python-callbacks-may-breach-any-isolation-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JavaScript-to-Python callbacks may breach any isolation boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#brief-catalog-of-key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brief catalog of key components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Brief catalog of key components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        docs/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#justfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Justfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setuppy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setup.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#builderv8_buildpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        builder/v8_build.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srcv8_py_frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/v8_py_frontend/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-srcpy_mini_racerlibmini_racerso-srcpy_mini_racermini_racerdll-srcpy_mini_racerlibmini_racerdylib" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Compiled) src/py_mini_racer/libmini_racer.so, src/py_mini_racer/mini_racer.dll, src/py_mini_racer/libmini_racer.dylib
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiled-srcpy_mini_racericudtldat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Compiled) src/py_mini_racer/icudtl.dat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defunct-srcpy_mini_racersnapshot_blobbin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        (Defunct) src/py_mini_racer/snapshot_blob.bin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#srcpy_mini_racer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        src/py_mini_racer/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#githubworkflowsbuildyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/workflows/build.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minimize-the-interface-with-v8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize the interface with V8
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-v8-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build V8 from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-pypi-wheels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build PyPI wheels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-the-free-github-actions-hosted-runners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use the free GitHub Actions hosted runners
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-interface-with-the-cpython-api-dont-make-an-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't interface with the CPython API (don't make an extension)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-use-cibuildwheel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't use cibuildwheel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-with-cross-compile-for-aarch64-on-linux-and-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build with cross-compile for aarch64 on Linux and Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-for-alpine-as-a-cross-compatible-glibc-binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build for Alpine as a cross-compatible glibc binary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-v8-with-our-frontend-v8_py_frontend-as-a-snuck-in-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build V8 with our frontend (v8_py_frontend) as a snuck-in component
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buggy-or-adversarial-javascript-shouldnt-be-able-to-crash-or-otherwise-disrupt-things" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buggy or adversarial JavaScript shouldn't be able to crash or otherwise disrupt things
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dont-trust-javascript-with-memory-management-of-c-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Don't trust JavaScript with memory management of C++ objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#any-raw-c-object-pointers-and-references-given-to-javascript-must-outlive-the-v8isolate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Any raw C++ object pointers and references given to JavaScript must outlive the v8::Isolate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-javascript-integer-ids-to-track-any-allocated-objects-on-the-c-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use JavaScript integer IDs to track any allocated objects on the C++ side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buggy-python-shouldnt-be-able-to-crash-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buggy Python shouldn't be able to crash C++
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minimize-trust-of-python-in-automatic-memory-management-of-c-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize trust of Python in automatic memory management of C++ objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minimize-trust-of-python-in-handing-cc-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimize trust of Python in handing C/C++ pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-python-integer-ids-to-track-any-allocated-objects-on-the-c-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Python integer IDs to track any allocated objects on the C++ side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#except-for-valuehandle-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ... except for ValueHandle pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#only-touch-most-of-the-v8isolate-from-within-the-message-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Only touch (most of) the v8::Isolate from within the message loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-any-c-code-creates-an-isolate-task-its-responsible-for-awaiting-its-completion-before-teardown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If any C++ code creates an Isolate task, it's responsible for awaiting its completion before teardown
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
+<p>This document contains some notes about the design of PyMiniRacer.</p>
+<h2 id="security-goals">Security goals<a class="headerlink" href="#security-goals" title="Permanent link">&para;</a></h2>
+<p><strong>First and foremost, PyMiniRacer makes no guarantees or warrantees, as noted in the
+license.</strong> This section documents the security <em>goals</em> of PyMiniRacer. Anything that
+doesn't meet these goals should be considered to be a bug (but with no warrantee or even
+a guaranteed path to remediation).</p>
+<h3 id="pyminiracer-should-be-able-to-run-untrusted-javascript-code">PyMiniRacer should <em>be able to</em> run untrusted JavaScript code<a class="headerlink" href="#pyminiracer-should-be-able-to-run-untrusted-javascript-code" title="Permanent link">&para;</a></h3>
+<p>The ability for PyMiniRacer to run untrusted JavaScript code
+<a href="https://news.ycombinator.com/item?id=39754885#39813985">was an original design goal for Sqreen</a>
+in developing PyMiniRacer, and continues to be a design goal today.</p>
+<p>To that end, PyMiniRacer provides:</p>
+<ol>
+<li>
+<p>The innate sandboxing properties of V8. V8 is trusted by billions of folks to run
+   untrusted JavaScript every day, as a part of Chrome and other web browsers. It has
+   many features like the <a href="https://v8.dev/blog/sandbox">security sandbox</a> and undergoes
+   close security scrutiny.</p>
+</li>
+<li>
+<p>The ability to create multiple <code>MiniRacer</code> instances which each have separate V8
+   isolates, to separate different blobs of untrusted code from each other.</p>
+</li>
+<li>
+<p>Optional timeouts and memory constraints on code being executed.</p>
+</li>
+</ol>
+<p>Caveats:</p>
+<ol>
+<li>
+<p>The continual security research is V8 under yields a corresponding
+   <a href="https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=v8">stream of vulnerability reports</a>.</p>
+</li>
+<li>
+<p>... and while V8 <em>as embedded in a web browser</em> will typically receive (funded!)
+   updates to correct those vulnerabilities, PyMiniRacer is unlikely to see as
+   aggressive and consistent an update schedule.</p>
+</li>
+<li>
+<p>... and of course PyMiniRacer itself may have vulnerabilities.
+   <a href="https://nvd.nist.gov/vuln/detail/CVE-2020-25489">This has happened before</a>.</p>
+</li>
+<li>
+<p>... and even if PyMiniRacer is updated to accomodate a vulnerability fix in itself or
+   V8, it is incumbent upon Python applications which integrate it to actually redeploy
+   with the new PyMiniRacer version.</p>
+</li>
+</ol>
+<p>If running potentially adversarial JavaScript code in a high-security environment, it
+might be a better choice to run code using a purpose-built isolation environment such as
+containers on <a href="https://gvisor.dev/">gVisor</a>, than to rely on PyMiniRacer for isolation.</p>
+<h3 id="javascript-to-python-callbacks-may-breach-any-isolation-boundary">JavaScript-to-Python callbacks may breach any isolation boundary<a class="headerlink" href="#javascript-to-python-callbacks-may-breach-any-isolation-boundary" title="Permanent link">&para;</a></h3>
+<p>The <code>MiniRacer.wrap_py_function</code> method allows PyMiniRacer users to expose Python
+functions <em>they write</em> to JavaScript. This creates an extension framework which
+essentially breaches the isolation boundary provided by V8.</p>
+<p>This feature should only be used if the underlying JavaScript code <em>is</em> trusted, or if
+the author is certain the exposed Python function is safe for calls from untrusted code.
+(I.e., if you expose a Python function which allows reading arbitrary files from disk,
+this would obviously be bad if the JavaScript code which may call it is itself
+untrusted.)</p>
+<h2 id="brief-catalog-of-key-components">Brief catalog of key components<a class="headerlink" href="#brief-catalog-of-key-components" title="Permanent link">&para;</a></h2>
+<h3 id="docs"><code>docs/</code><a class="headerlink" href="#docs" title="Permanent link">&para;</a></h3>
+<p>This is the <a href="https://www.mkdocs.org/"><code>mkdocs</code> </a> site for PyMiniRacer. To maximize
+compatibility with standard open-source repository layout, this directory is just a
+bunch of stubs which include files from the package root.</p>
+<h3 id="justfile"><code>Justfile</code><a class="headerlink" href="#justfile" title="Permanent link">&para;</a></h3>
+<p>This is the main control board for PyMiniRacer dev work, for manual operations and
+GitHub Actions alike.</p>
+<h3 id="setuppy"><code>setup.py</code><a class="headerlink" href="#setuppy" title="Permanent link">&para;</a></h3>
+<p>This is a custom distutils setup script, required to:</p>
+<ol>
+<li>Set a custom architecture tag for the wheel (indicating the build is arch-dependent
+   but not specific to a Python version), and</li>
+<li>Generate a readme!</li>
+</ol>
+<p>We leave the v8 build out of the Python setuptools system because it's slow and fragile
+and actually unrelated to Python, and thus ill-served by the wrapping provided by Python
+setuptools and uv.</p>
+<h3 id="builderv8_buildpy"><code>builder/v8_build.py</code><a class="headerlink" href="#builderv8_buildpy" title="Permanent link">&para;</a></h3>
+<p>This is the PyMiniRacer V8 build wrapper. Building V8 for many platforms (Windows, Mac,
+glibc Linux, musl Linux) <em>and</em> architectures (x86_64, aarch64) is hard, especially since
+V8 is primarily intended to be built by Google engineers on a somewhat different set of
+of platforms (i.e., those Chrome runs on), and typically via cross-compiled from
+relatively curated build hosts. So this file is complicated and full of <code>if</code> statements.</p>
+<h3 id="srcv8_py_frontend"><code>src/v8_py_frontend/</code><a class="headerlink" href="#srcv8_py_frontend" title="Permanent link">&para;</a></h3>
+<p>This is a small frontend for V8, written in C++. It manages initialization, context,
+marshals and unmarshals inputs and outputs through V8's type system, etc. The front-end
+exposes simple functions and types which are friendly to the Python <code>ctypes</code> system.
+These simple C++ functions in turn call the C++ V8 APIs.</p>
+<p>As noted below, <code>v8_py_frontend</code> is <em>not</em> a Python extension (it does <em>not</em> include
+<code>Python.h</code> or link <code>libpython</code>, and it does not touch Python types).</p>
+<h3 id="compiled-srcpy_mini_racerlibmini_racerso-srcpy_mini_racermini_racerdll-srcpy_mini_racerlibmini_racerdylib">(Compiled) <code>src/py_mini_racer/libmini_racer.so</code>, <code>src/py_mini_racer/mini_racer.dll</code>, <code>src/py_mini_racer/libmini_racer.dylib</code><a class="headerlink" href="#compiled-srcpy_mini_racerlibmini_racerso-srcpy_mini_racermini_racerdll-srcpy_mini_racerlibmini_racerdylib" title="Permanent link">&para;</a></h3>
+<p>These files (<em>which one</em> depends on the platform) contain the compiled V8 build,
+complete with the frontend from <code>src/v8_py_frontend</code>.</p>
+<h3 id="compiled-srcpy_mini_racericudtldat">(Compiled) <code>src/py_mini_racer/icudtl.dat</code><a class="headerlink" href="#compiled-srcpy_mini_racericudtldat" title="Permanent link">&para;</a></h3>
+<p>This is a build-time-generated internationalization artifact, used
+<a href="https://v8.dev/docs/i18n">at runtime by V8</a> and thus shipped with PyMiniRacer.</p>
+<h3 id="defunct-srcpy_mini_racersnapshot_blobbin">(Defunct) <code>src/py_mini_racer/snapshot_blob.bin</code><a class="headerlink" href="#defunct-srcpy_mini_racersnapshot_blobbin" title="Permanent link">&para;</a></h3>
+<p><em>Update: We now build this into PyMiniRacer using a v8 "monolith" build.</em></p>
+<p>This ~is~ <em>was</em> a build-time-generated
+<a href="https://v8.dev/blog/custom-startup-snapshots">startup snapshot</a>, used at runtime by V8
+and thus shipped with PyMiniRacer. This is a snapshot of the JavaScript heap including
+JavaScript built-ins, which accelerates JS engine startup.</p>
+<h3 id="srcpy_mini_racer"><code>src/py_mini_racer/</code><a class="headerlink" href="#srcpy_mini_racer" title="Permanent link">&para;</a></h3>
+<p>This is the pure-Python implementation of PyMiniRacer. This loads the
+(Python-independent) PyMiniRacer dynamic-link library (<code>.dll</code> on windows, <code>.so</code> on
+Linux, <code>.dylib</code> on MacOS) and uses the Python <code>ctypes</code> system to call methods within it,
+to manage V8 context and actually evaluate JavaScript code.</p>
+<h3 id="githubworkflowsbuildyml"><code>.github/workflows/build.yml</code><a class="headerlink" href="#githubworkflowsbuildyml" title="Permanent link">&para;</a></h3>
+<p>This is the primary build script for PyMiniRacer, implemented as a GitHub Actions
+workflow.</p>
+<h2 id="design-decisions">Design decisions<a class="headerlink" href="#design-decisions" title="Permanent link">&para;</a></h2>
+<p>These are listed in a topological sort, from most-fundamental to most-derived decisions.</p>
+<p>In theory, answers to questions in the vein of "Why is it done this way?" belong in this
+section.</p>
+<h3 id="minimize-the-interface-with-v8">Minimize the interface with V8<a class="headerlink" href="#minimize-the-interface-with-v8" title="Permanent link">&para;</a></h3>
+<p>V8 is extremely complex and is under continual, heavy development. Such development can
+result in interface changes, which may in turn break PyMiniRacer.</p>
+<p>To mitigate the risk of breakage with new V8 builds, we seek to minimize the "API
+surface area" between PyMiniRacer and V8. This means we seek to limit "advanced" use of
+both:</p>
+<ol>
+<li>The V8 C++ API, and</li>
+<li>The V8 build system (GN) and build options.</li>
+</ol>
+<p>Our success at minimizing the interface with the V8 build system can be measured by:</p>
+<ol>
+<li>The number of times the text <code>v8::</code> appears in <code>src/v8_py_frontend</code>, and</li>
+<li>The length of <code>builder/v8.build.py</code> (467 lines as of this writing!). Making V8 build
+   on multiple platforms takes a lot of trickery...</li>
+</ol>
+<h3 id="build-v8-from-source">Build V8 from source<a class="headerlink" href="#build-v8-from-source" title="Permanent link">&para;</a></h3>
+<p>The V8 project does not produce stable binary distributions, i.e., static or dynamic
+libraries. (In Linux terms, this would probably look like dpkgs and rpms with names like
+<code>libv8</code> and <code>libv8-dev</code>.) Instead, any project (like NodeJS, Chromium, or...
+PyMiniRacer!) which wants to integrate V8 must first build it.</p>
+<h3 id="build-pypi-wheels">Build PyPI wheels<a class="headerlink" href="#build-pypi-wheels" title="Permanent link">&para;</a></h3>
+<p>Because V8 takes so long to build (about 2-3 hours at present on the free GitHub Actions
+runners), we want to build wheels for PyPI. We don't want folks to have to build V8 when
+they <code>pip install mini-racer</code>!</p>
+<p>We build wheels for many operating systems and architectures based on popular demand via
+GitHib issues. Currently the list is
+<code>{x86_64, aarch64} × {Debian Linux, Alpine Linux, Mac, Windows}</code>.</p>
+<h3 id="use-the-free-github-actions-hosted-runners">Use the free GitHub Actions hosted runners<a class="headerlink" href="#use-the-free-github-actions-hosted-runners" title="Permanent link">&para;</a></h3>
+<p>PyMiniRacer is not a funded project, so we run on the free GitHub Actions hosted
+runners. These currently let us build for many key platforms.</p>
+<p>This also lets contributors easily run the same build automation by simply forking the
+PyMiniRacer repo and running the workflows (for free!) within their own forks.</p>
+<h3 id="dont-interface-with-the-cpython-api-dont-make-an-extension">Don't interface with the CPython API (don't make an extension)<a class="headerlink" href="#dont-interface-with-the-cpython-api-dont-make-an-extension" title="Permanent link">&para;</a></h3>
+<p>We'd rather avoid directly interfacing with the CPython API, for a couple reasons:</p>
+<ol>
+<li><strong>API flux</strong>: Similar to the above note about V8, the CPython API is complex and
+   always in flux, <em>although not as much as V8</em>).</li>
+<li><strong>Version proliferation</strong>: there are a ton of active Python versions (as of this
+   writing, PyMiniRacer supports 3.8, 3.9, 3.10, 3.11, and 3.12, and also there's
+   CPython and PyPy). PyMiniRacer <em>already</em> includes builds for 7 target architectures
+   (see above); if we factor in 5x Python versions and 2x Python interpreters, we will
+   wind up with 70 wheels, all on a free GitHub Actions runner!</li>
+</ol>
+<p>So, <em>instead of</em> an extension module (which includes <code>Python.h</code> and links against
+<code>libpython</code>), we build an ordinary Python-independent C++ library, and use <code>ctypes</code> to
+access it.</p>
+<p>Consequently, <code>libmini_racer.so</code> isn't specific to Python, and the code barely mentions
+Python. One could in theory use it from any other language which knows how to call C
+APIs, such as Java, Go, C#, ... or just C. No one does so as of this writing.</p>
+<h3 id="dont-use-cibuildwheel">Don't use <code>cibuildwheel</code><a class="headerlink" href="#dont-use-cibuildwheel" title="Permanent link">&para;</a></h3>
+<p>Many modern Python projects which need to build wheels with native code use
+<a href="https://github.com/pypa/cBbuildwheel">the <code>cibuildwheel</code> project</a> to manange their
+builds. However, <code>cibuildwheel</code> isn't a perfect fit here. Because we are building
+Python-independent dynamic-link libraries instead of Python extension modules modules
+for the reasons noted above, we aren't linking with any particular Python ABI. Thus we
+need <em>only</em> <code>(operating systems × architectures)</code> builds, whereas <code>cibuildwheel</code>
+generates <code>(operating systems × architecture × Python flavors × Python versions)</code>
+wheels.
+<a href="https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip">That's a ton of wheels</a>!
+Given that it takes hours to <em>days</em> to build PyMiniRacer for <em>one</em> target OS and
+architecture, doing redundant builds is undesirable.</p>
+<p>It might be possible to use <code>cibuildwheel</code> with PyMiniRacer by segmenting the build of
+the dynamic-link library (i.e., <code>libmini_racer.so</code>) from the actual wheel build. That
+is, we could have the following separate components:</p>
+<ol>
+<li>Create a separate Github Actions workflow to build the <code>libmini_racer.so</code> binary
+   (i.e., the hard part). Publish that as a release, using the GitHub release artifact
+   management system as a distribution mechanism.</li>
+<li>The wheel build step could then simply download a pre-built binary from the latest
+   GitHub release. We could use <code>cibuildwheel</code> to manage this step. This would generate
+   many redundant wheels (because the wheels we'd generate for, say, CPython 3.9 and
+   3.10 would be identical), but it wouldn't matter because it would be cheap and
+   automatic.</li>
+</ol>
+<p>This is similar to how the Ruby <a href="https://github.com/rubyjs/mini_racer"><code>mini_racer</code></a> and
+<a href="https://github.com/rubyjs/libv8-node"><code>libv8-node</code></a> projects, which inspired
+PyMiniRacer, work together today.</p>
+<p>To sum up, to use <code>cibuildwheel</code>, we would still need our own <em>separate</em>
+multi-architecture build workflow for V8, <em>ahead of</em> the <code>cibuildwheel</code> step. So
+<code>cibuildwheel</code> could potentially simplify the actual wheel distribution for us, but it
+wouldn't simplify the overall workflow management.</p>
+<h3 id="build-with-cross-compile-for-aarch64-on-linux-and-windows">Build with cross-compile for aarch64 on Linux and Windows<a class="headerlink" href="#build-with-cross-compile-for-aarch64-on-linux-and-windows" title="Permanent link">&para;</a></h3>
+<p>Trial and error indicates the V8 build process is simply not geared to be run on an
+actual Linux or Windows Arm machine. Various parts of the build system keep trying to
+run x86_64 tools (like a pre-built clang or rustc). On the other hand, cross-compiling
+works very well out of the box, so we do that!</p>
+<p>This doesn't apply on MacOS which has good native MacOS support on Arm, since that's
+obviously what many or most developers are using.</p>
+<h3 id="build-for-alpine-as-a-cross-compatible-glibc-binary">Build for Alpine as a cross-compatible glibc binary<a class="headerlink" href="#build-for-alpine-as-a-cross-compatible-glibc-binary" title="Permanent link">&para;</a></h3>
+<p>Prior versions of PyMiniRacer build V8 natively on Alpine, using a series of hacks and
+patches.</p>
+<p>This seems to be hopeless today; there are just too many parts of the V8 build which are
+incompatible with Alpine (and assume that "Linux" means "glibc"). Both the clang and
+rustc configuration systems are hard-wired in many ways that preclude operation on
+Alpine without extensive patching (or just dispensing with the V8 build system
+entirely!).</p>
+<p>So instead we build a on Ubuntu with glibc and then put that into a wheel on Alpine. To
+use the resulting wheel, you must <code>apk add gcompat libgcc</code> and add the environment
+variable <code>LD_PRELOAD="/lib/libgcompat.so.0"</code>.</p>
+<h3 id="build-v8-with-our-frontend-v8_py_frontend-as-a-snuck-in-component">Build V8 <em>with</em> our frontend (<code>v8_py_frontend</code>) as a snuck-in component<a class="headerlink" href="#build-v8-with-our-frontend-v8_py_frontend-as-a-snuck-in-component" title="Permanent link">&para;</a></h3>
+<p>We could <em>just</em> get a static library (i.e., <code>libv8.a</code>) from the V8 build, and link that
+into a dynamic-link library (i.e., <code>libmini_racer.so</code>) ourselves.</p>
+<p>However:</p>
+<ol>
+<li>We do have <em>more</em> C++ files to compile (the C++ code in <code>src/v8_py_frontend</code>)</li>
+<li>Because we're not making a true Python extension module (see above), we aren't using
+   Python's <code>setuptools</code> <code>Extension</code> infrastructure to perform a build.</li>
+</ol>
+<p>This leaves us needing <em>some</em> platform-independent C++ toolchain.</p>
+<p>V8 already has such a toolchain, based on Ninja and Generated Ninja files (GN). We
+already have to set it up to build V8 from source (see above for why!).</p>
+<p>Rather than bringing in yet another toolchain, we sneak <code>v8_py_frontend</code> into the V8
+tree itself, as a "custom dep". We then instruct GN to build it as if it were an
+ordinary part of V8.</p>
+<p>The result is a dynamic-link library which contains an ordinary release build of V8,
+plus our Python <code>ctypes</code>-friendly frontend.</p>
+<h3 id="buggy-or-adversarial-javascript-shouldnt-be-able-to-crash-or-otherwise-disrupt-things">Buggy or adversarial JavaScript shouldn't be able to crash or otherwise disrupt things<a class="headerlink" href="#buggy-or-adversarial-javascript-shouldnt-be-able-to-crash-or-otherwise-disrupt-things" title="Permanent link">&para;</a></h3>
+<p>Per the security goals above, we want PyMiniRacer to be able to run untrusted JavaScript
+code safely. This means we can't trust JavaScript to "behave". Intentionally bad (i.e,
+adversarial) or <strong>un</strong>intentionally bad (i.e., buggy) JavaScript should not be able to:</p>
+<ol>
+<li>Crash PyMiniRacer,</li>
+<li>Read arbitrary memory, or</li>
+<li>Use infinite CPU or memory resources</li>
+</ol>
+<p>For the latter, the PyMiniRacer Python API exposes optional constraints on memory usage
+as well as timeouts. The former two rules are enforced by the design of the C++ side of
+PyMiniRacer, and of course V8 itself.</p>
+<h3 id="dont-trust-javascript-with-memory-management-of-c-objects">Don't trust JavaScript with memory management of C++ objects<a class="headerlink" href="#dont-trust-javascript-with-memory-management-of-c-objects" title="Permanent link">&para;</a></h3>
+<p>JavaScript is a garbage-collected language, and like many such languages it
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry">offers</a>
+best-effort finalizer functionality, into which you can inject code which gets called
+when the runtime is disposing of an object.</p>
+<p>However, with
+<a href="https://stackoverflow.com/questions/24107280/v8-weakcallback-never-gets-called">V8-based JavaScript</a>,
+actually relying on this functionality to trigger callbacks to C++ to clean things up is
+heartily discouraged. Exploratory attempts to make this with PyMiniRacer actually didn't
+work at all.</p>
+<p>Even if we <em>could</em> get V8 to call us back reliably to tear down objects (e.g., by
+exposing an explicit teardown function to JavaScript), it would be hard to create a
+design which does so safely. V8 (per our security goals) may be running adversarial
+JavaScript which might try and use a reference after we free it, exploiting a
+use-after-free bug.</p>
+<h3 id="any-raw-c-object-pointers-and-references-given-to-javascript-must-outlive-the-v8isolate">Any raw C++ object pointers and references given to JavaScript must outlive the <code>v8::Isolate</code><a class="headerlink" href="#any-raw-c-object-pointers-and-references-given-to-javascript-must-outlive-the-v8isolate" title="Permanent link">&para;</a></h3>
+<p>Due to the above rule, we can't rely on V8 to tell us when it's <em>done with</em> any
+references we give it, until the <code>v8::Isolate</code> is torn down. So clearly the only thing
+we <em>can</em> do is ensure any raw pointers or references we hand to V8 are valid until after
+the <code>v8::Isolate</code> is torn down.</p>
+<h3 id="use-javascript-integer-ids-to-track-any-allocated-objects-on-the-c-side">Use JavaScript integer IDs to track any allocated objects on the C++ side<a class="headerlink" href="#use-javascript-integer-ids-to-track-any-allocated-objects-on-the-c-side" title="Permanent link">&para;</a></h3>
+<p>The above said, we still have cases where we want to tell JavaScript about objects which
+have shorter lifecycles than the <code>v8::Isolate</code> itself. E.g., a function callback from
+JavaScript to C++ (and thus to Python) might only be used as a single <code>Promise.then</code>
+callback. If a long-running program were to create tons of <code>Promise</code>s, we'd want to
+garbage collect the callbacks as we go, without waiting for the whole <code>v8::Isolate</code> to
+exit.</p>
+<p>We can treat that case by "laundering" our raw C++ pointers and references through C++
+maps (i.e., <code>std::unordered_map&lt;uint64_t, std::shared_ptr&lt;T&gt;&gt;</code>), giving V8 JavaScript
+only IDs into the map. We can convert IDs back into C++ pointers when JavaScript calls
+us back, after checking that they're still valid. (And we use <code>std::shared_ptr</code> to avoid
+tear-down race conditions wherein a map entry is removed in one thread while we're still
+using an object in another.)</p>
+<p>In this manner, the C++ side can be authoritative about when objects are torn down. It
+can delete C++ objects and remove them from the map whenever it sees fit. If JavaScript
+tries to use the ID after that point, such usage can be easily spotted and safely
+ignored.</p>
+<h3 id="buggy-python-shouldnt-be-able-to-crash-c">Buggy Python shouldn't be able to crash C++<a class="headerlink" href="#buggy-python-shouldnt-be-able-to-crash-c" title="Permanent link">&para;</a></h3>
+<p>Similar to, but with a lower priority than the above rule regarding bad <em>JavaScript</em>,
+bad <em>Python</em> should not be able to crash the Python interpretter through PyMiniRacer.
+This is a common design principle for Python; bad code should <em>not</em> result in
+segmentation faults, sending developers scrambling to C/C++ debugging of core files,
+etc. Extension modules should uphold this principle.</p>
+<p>This applies only to <strong>un</strong>intentionally bad (i.e., buggy) Python code. PyMiniRacer does
+not and cannot protect itself from intentionally bad (i.e., adversarial) Python code. A
+determined Python programmer can always crash Python with ease without any help from
+PyMiniRacer. Try it!: <code>import ctypes; ctypes.cast(0x1, ctypes.c_char_p).value</code></p>
+<h3 id="minimize-trust-of-python-in-automatic-memory-management-of-c-objects">Minimize trust of Python in <em>automatic</em> memory management of C++ objects<a class="headerlink" href="#minimize-trust-of-python-in-automatic-memory-management-of-c-objects" title="Permanent link">&para;</a></h3>
+<p>Python is also a garbage-collected language, and like JavaScript, it
+<a href="https://docs.python.org/3/reference/datamodel.html#object.__del__">offers</a> best-effort
+finalizer functionality.</p>
+<p>Like in JavaScript code, relying on Python's finalizer functionality is
+<a href="https://stackoverflow.com/questions/6104535/i-dont-understand-this-python-del-behaviour#answer-6104568">heartily discouraged</a>.
+We can, at best, use <code>__del__</code> as a shortcut signaling we can go ahead and free
+something to help reduce memory usage, but we shouldn't rely on it.</p>
+<p>Since, unlike JavaScript, we <em>do</em> trust Python code, we can create explicit Python APIs
+to manage object lifecycle. The Pythonic way to do that is with
+<a href="https://docs.python.org/3/reference/datamodel.html#context-managers">context managers</a>.</p>
+<p>Thus, for example, the MiniRacer Python <code>_Context</code> object, which wraps exactly one C++
+<code>MiniRacer::Context</code> object, provides <em>both</em> a <code>__del__</code> finalizer for easy cleanup
+which always works "eventually", and an explicit context manager interface for
+PyMiniRacer users who want strong guarantees about teardown.</p>
+<h3 id="minimize-trust-of-python-in-handing-cc-pointers">Minimize trust of Python in handing C/C++ pointers<a class="headerlink" href="#minimize-trust-of-python-in-handing-cc-pointers" title="Permanent link">&para;</a></h3>
+<p>The <code>ctypes</code> module lets Python directly wrangle C/C++ pointers. This can be used to
+send, receive, and mutate data shared between Python and C.</p>
+<p>This is obviously somewhat dangerous. Array overruns are an obvious problem.
+Use-after-free is more insidious: imagine the C++ side of PyMiniRacer returns a pointer
+to an object to Python, Python stores that pointer, the C++ frees the object, and then
+Python tries to use the pointer. This will work <em>sometimes</em> and crash—or worse, read
+incorrect data—at other times.</p>
+<h3 id="use-python-integer-ids-to-track-any-allocated-objects-on-the-c-side">Use Python integer IDs to track any allocated objects on the C++ side<a class="headerlink" href="#use-python-integer-ids-to-track-any-allocated-objects-on-the-c-side" title="Permanent link">&para;</a></h3>
+<p>Thus, combining all the above rules, we wind up with a similar rule for Python as we
+have for JavaScript. Wherever possible, we avoid interchanging raw pointers between C++
+and Python. Instead, we interchange integer IDs. The C++ side of PyMiniRacer can convert
+integer IDs to raw pointers using a map, after validating that the IDs are still valid.</p>
+<h3 id="except-for-valuehandle-pointers">... except for <code>ValueHandle</code> pointers<a class="headerlink" href="#except-for-valuehandle-pointers" title="Permanent link">&para;</a></h3>
+<p>We break the above rule for <code>ValueHandle</code> pointers. PyMiniRacer uses <code>ValueHandle</code> to
+exchange most data between Python and C++. Python directly reads the contents of
+<code>ValueHandle</code> pointers, to read primitive values (e.g., booleans, integers, and
+strings).</p>
+<p>We do this for theoretical performance reasons which have not yet been validated. To be
+consistent with the rest of PyMiniRacer's design, we <em>could</em> create an API like:</p>
+<ol>
+<li>C++ generates a numeric <code>value_id</code> and stores a Value in a
+   <code>std::unordered_map&lt;uint64_t, std::shared_ptr&lt;Value&gt;&gt;</code>.</li>
+<li>C++ gives Python that <code>value_id</code> to Python.</li>
+<li>To get any data Python has to call APIs like <code>mr_value_type(context_id, value_id)</code>,
+   <code>mr_value_as_bool(context_id, value_id)</code>,
+   <code>mr_value_as_string_len(context_id, value_id)</code>,
+   <code>mr_value_as_string(context_id, value_id, buf, buflen)</code>, ...</li>
+<li>Eventually Python calls <code>mr_value_free(context_id, value_id)</code> which wipes out the map
+   entry, thus freeing the <code>Value</code>.</li>
+</ol>
+<p><em>**Note: We don't do this. The above is _not</em> how PyMiniRacer actually handles
+values.**_</p>
+<p>This is surely slower than direct pointer access, but no performance analysis has been
+done to see if it matters. It might be interesting to try the above and benchmark it. It
+would be nice to switch to that model if it's sufficiently performant.</p>
+<p>For now at least, we instead use raw pointers for this case.</p>
+<p>We still don't fully trust Python with the lifecyce of <code>ValueHandle</code> pointers; when
+Python passes these pointers back to C++, we still check validity by looking up the
+pointer as a key into a map (which then lets the C++ side of PyMiniRacer find the <em>rest</em>
+of the <code>Value</code> object). The C++ <code>MiniRacer::ValueFactory</code> can authoritatively destruct
+any dangling <code>Value</code> objects when it exits.</p>
+<p>This last especially helps with an odd scenario introduced by Python <code>__del__</code>: the
+order in which Python calls <code>__del__</code> on a collection of objects is neither guaranteed
+nor very predictable. When a Python program drops references to a Python <code>MiniRacer</code>
+object, it's common for Python to call <code>_Context.__del__</code> before it calls
+<code>ValHandle.__del__</code>, thus destroying <em>the container for</em> the value before it destroys
+the value itself. The C++ side of PyMiniRacer can easily detect this scenario: First,
+when destroying the <code>MiniRacer::Context</code>, it sees straggling <code>Value</code>s and destroys them.
+Then, when Python asks C++ to destroy the straggling <code>ValueHandle</code>s, the C++
+<code>mr_free_value</code> API sees the <code>MiniRacer::Context</code> is already gone, and ignores the
+redundant request.</p>
+<p>The above scenario does imply a possibility for dangling pointer access: if Python calls
+<code>_Context.__del__</code> then tries to read the memory addressed by the raw <code>ValueHandle</code>
+pointers, it will be committing a use-after-free error. We mitigate this problem by
+hiding <code>ValueHandle</code> within PyMiniRacer's Python code, and by giving <code>ValHandle</code> (our
+Python wrapper of <code>ValueHandle</code>) a reference to the <code>_Context</code>, preventing the context
+from being finalized until the <code>ValHandle</code> is <em>also</em> in Python's garbage list and on its
+way out.</p>
+<h3 id="only-touch-most-of-the-v8isolate-from-within-the-message-loop">Only touch (most of) the <code>v8::Isolate</code> from within the message loop<a class="headerlink" href="#only-touch-most-of-the-v8isolate-from-within-the-message-loop" title="Permanent link">&para;</a></h3>
+<p>While a <code>v8::Isolate</code> is generally a thread-aware and multi-threaded object, most of its
+methods are not thread-safe. The same goes for most <code>v8</code> objects. It is, generally, only
+safe to touch things belonging to a <code>v8::Isolate</code> if you hold the <code>v8::Locker</code> lock. (To
+make matters more interesting, documentation about what things might be safe to do
+<em>without</em> the lock is pretty scarce. You find out when your unsafe code crashes. Which,
+you know, might not happen until years after you wrote the unsafe code. C++ is fun!)</p>
+<p>The "don't touch the <code>v8::Isolate</code> without holding the <code>v8::Locker</code>" rule is made
+particularly hard to follow since we also need to run a message loop thread to service
+background work in v8. That message loop, of course, itself needs the <code>v8::Locker</code>.
+Unfortunately, the message loop can wait indefinitely for new work, and yet doesn't give
+up the lock while doing that waiting.</p>
+<p>This poses a conundrum: the message loop hogs the isolate lock potentially indefinitely,
+and yet other threads (i.e., Python threads) need that lock so they can poke at
+<code>v8::Isolate</code>-owned objects too.</p>
+<p>We resolve the conundrum by leveraging part of the <code>v8::Isolate</code> itself, using a trick
+similar to what NodeJS does: everything that needs to touch a <code>v8::Isolate</code> should
+simply run from the <code>v8::Isolate</code>'s own message loop. If you want to run JS code,
+manipulate an object, <em>or even delete a V8 object</em>, you must submit a task to the
+message loop. Then nothing but the message loop itself should need to hold the
+<code>v8::Locker</code> lock, because only the message loop ever touches the <code>v8::Isolate</code>.</p>
+<p>To make this somewhat easier we have created <code>MiniRacer::IsolateManager</code>, which provides
+an easy API to submit tasks, whose callbacks accept as their first-and-only argument a
+<code>v8::Isolate*</code>. Such tasks can freely work on the isolate until they exit. (Obviously,
+saving a copy of the pointer and using it later would defeat the point; don't do that.)</p>
+<p>One odd tidbit of PyMiniRacer is that <em>even object destruction</em> has to use the above
+pattern. For example, it is (probably) not safe to free a <code>v8::Global</code> without holding
+the isolate lock, so when a non-message-loop thread needs to destroy a wrapped V8 value,
+we enqueue a pretty trivial task for the message loop:
+<code>isolate_manager-&gt;Run([global]() { delete global; })</code>.</p>
+<p>See <a href="https://groups.google.com/g/v8-users/c/glG3-3pufCo">here</a> for some discussion of
+this design on the v8-users mailing list.</p>
+<h3 id="if-any-c-code-creates-an-isolate-task-its-responsible-for-awaiting-its-completion-before-teardown">If any C++ code creates an Isolate task, it's responsible for awaiting its completion before teardown<a class="headerlink" href="#if-any-c-code-creates-an-isolate-task-its-responsible-for-awaiting-its-completion-before-teardown" title="Permanent link">&para;</a></h3>
+<p>The pattern, described above—of enqueuing all kinds of tasks for the v8 message pump,
+including object destruction work—creates an interesting memory management problem for
+PyMiniRacer. Such tasks typically create a reference cycle: the creator of the task
+(like, say, the <code>MiniRacer::Context::MakeJSCallback</code>) bundles into the task references
+to various other objects including, often, <code>this</code>. Those objects often themselves
+contain references to the <code>MiniRacer::IsolateManager</code>, which transitively contains a
+reference to the <code>v8::Isolate</code> and its message queue. Since the message queue contains a
+reference to the task, we've just created a reference cycle!</p>
+<p>To avoid either use-after-free or memory leak bugs upon teardown of a
+<code>MiniRacer::Context</code>, we must enforce the following rule:</p>
+<p><strong>If you call <code>MiniRacer::IsolateManager::Run(xyz)</code>, you are reponsible for ensuring
+that task is done before any objects you bound into the function closure xyz (including
+and especially <code>this</code>) are destroyed.</strong></p>
+<p>The most common way we ensure this is waiting on the <code>std::future&lt;void&gt;</code> returned by
+<code>MiniRacer::IsolateManager::Run(xyz)</code>. When that future settles, the task is done, and
+it's safe to continue tearing down any references the task may hold.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>

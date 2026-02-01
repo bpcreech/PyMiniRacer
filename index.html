@@ -1,0 +1,893 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://bpcreech.com/PyMiniRacer/">
+      
+      
+      
+        <link rel="next" href="api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>PyMiniRacer</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#in-brief" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="PyMiniRacer" class="md-header__button md-logo" aria-label="PyMiniRacer" data-md-component="logo">
+      
+  <img src="py_mini_racer.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyMiniRacer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="PyMiniRacer" class="md-nav__button md-logo" aria-label="PyMiniRacer" data-md-component="logo">
+      
+  <img src="py_mini_racer.png" alt="logo">
+
+    </a>
+    PyMiniRacer
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#in-brief" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In brief
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developing-and-releasing-pyminiracer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developing and releasing PyMiniRacer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#in-brief" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In brief
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developing-and-releasing-pyminiracer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developing and releasing PyMiniRacer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Home</h1>
+
+<p><a href="https://pypi.python.org/pypi/mini_racer"><img alt="PyPI status indicator" src="https://img.shields.io/pypi/v/mini_racer.svg" /></a>
+<a href="https://github.com/bpcreech/PyMiniRacer/actions/workflows/build.yml"><img alt="Github workflow status indicator" src="https://github.com/bpcreech/PyMiniRacer/actions/workflows/build.yml/badge.svg" /></a>
+<a href="https://opensource.org/licenses/ISC"><img alt="ISC License" src="https://img.shields.io/badge/License-ISC-blue.svg" /></a></p>
+<p>Minimal, modern embedded V8 for Python.</p>
+<p><img alt="MiniRacer logo: a V8 with a very snakey 8" src="py_mini_racer.png" /></p>
+<p><a href="https://bpcreech.com/PyMiniRacer/">Full documentation</a>.</p>
+<h2 id="in-brief">In brief<a class="headerlink" href="#in-brief" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Latest ECMAScript support</li>
+<li>Web Assembly support</li>
+<li>Unicode support</li>
+<li>Thread safe</li>
+<li>Re-usable contexts</li>
+</ul>
+<p>MiniRacer can be easily used by Django or Flask projects to minify assets, run babel or
+WASM modules.</p>
+<p>PyMiniRacer was created by <a href="https://github.com/sqreen">Sqreen</a>, and originally lived at
+<a href="https://github.com/sqreen/PyMiniRacer">https://github.com/sqreen/PyMiniRacer</a> with the PyPI package
+<a href="https://pypi.org/project/py-mini-racer/"><code>py-mini-racer</code></a>. After dicussion with the
+original Sqreen team, <a href="https://bpcreech.com">I</a> have created a new official home for at
+<a href="https://github.com/bpcreech/PyMiniRacer">https://github.com/bpcreech/PyMiniRacer</a> with a new PyPI package
+<a href="https://pypi.org/project/mini-racer/"><code>mini-racer</code></a> (<em>note: no <code>py-</code></em>). See
+<a href="https://bpcreech.com/PyMiniRacer/history">the full history</a> for more.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>MiniRacer is straightforward to use:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w">    </span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mini-racer
+</span></code></pre></div>
+<p>and then:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    <span class="err">$</span> <span class="n">python3</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiniRacer</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span> <span class="o">=</span> <span class="n">MiniRacer</span><span class="p">()</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;1+1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="mi">2</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;var x = {company: &#39;Sqreen&#39;}; x.company&quot;</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="s1">&#39;Sqreen&#39;</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;&#39;❤&#39;&quot;</span><span class="p">))</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="err">❤</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;var fun = () =&gt; ({ foo: 1 });&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Variables are kept inside of a context:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;x.company&quot;</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s1">&#39;Sqreen&#39;</span>
+</span></code></pre></div>
+<p>You can evaluate whole scripts within JavaScript, or define and return JavaScript
+function objects and call them from Python (<em>new in v0.11.0</em>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">square</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;a =&gt; a*a&quot;</span><span class="p">)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">square</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="mi">16</span>
+</span></code></pre></div>
+<p>JavaScript Objects and Arrays are modeled in Python as dictionaries and lists (or, more
+precisely,
+<a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping"><code>MutableMapping</code></a>
+and
+<a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableSequence"><code>MutableSequence</code></a>
+instances), respectively (<em>new in v0.11.0</em>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">obj</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;var obj = {&#39;foo&#39;: &#39;bar&#39;}; obj&quot;</span><span class="p">)</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;foo&quot;</span><span class="p">]</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s1">&#39;bar&#39;</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;var arr = [&#39;a&#39;, &#39;b&#39;]; arr&quot;</span><span class="p">)</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">arr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="s1">&#39;b&#39;</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;a&#39;</span> <span class="ow">in</span> <span class="n">arr</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="kc">True</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;JSON.stringify(arr)&quot;</span><span class="p">)</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="s1">&#39;[&quot;a&quot;,&quot;b&quot;,{&quot;foo&quot;:&quot;bar&quot;}]&#39;</span>
+</span></code></pre></div>
+<p>Meanwhile, <code>call</code> uses JSON to transfer data between JavaScript and Python, and converts
+data in bulk:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;fun&quot;</span><span class="p">)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+</span></code></pre></div>
+<p>Composite values are serialized using JSON. Use a custom JSON encoder when sending
+non-JSON encodable parameters:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">CustomEncoder</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="p">):</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>            <span class="k">def</span><span class="w"> </span><span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>                    <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;var f = function(args) { return args; }&quot;</span><span class="p">)</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;f&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">encoder</span><span class="o">=</span><span class="n">CustomEncoder</span><span class="p">)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="s1">&#39;2017-03-31T16:51:02.474118&#39;</span>
+</span></code></pre></div>
+<p>MiniRacer is ES6 capable:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;[1,2,3].includes(5)&quot;</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="kc">False</span>
+</span></code></pre></div>
+<p>JavaScript <code>null</code> and <code>undefined</code> are modeled in Python as <code>None</code> and <code>JSUndefined</code>,
+respectively:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;[null, undefined]&quot;</span><span class="p">))</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">JSUndefined</span><span class="p">]</span>
+</span></code></pre></div>
+<p>You can prevent runaway execution in synchronous code using the <code>timeout_sec</code> parameter:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;while (true) </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="c1"># Spins for 2 seconds and then emits a traceback ending with...</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>        <span class="k">raise</span> <span class="n">JSTimeoutException</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">py_mini_racer</span><span class="o">.</span><span class="n">_exc</span><span class="o">.</span><span class="n">JSTimeoutException</span><span class="p">:</span> <span class="n">JavaScript</span> <span class="n">was</span> <span class="n">terminated</span> <span class="n">by</span> <span class="n">timeout</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">func</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;() =&gt; {while (true) </span><span class="si">{}</span><span class="s1">}&#39;</span><span class="p">)</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="p">(</span><span class="n">timeout_sec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="c1"># Spins for 2 seconds and then emits a traceback ending with...</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>        <span class="k">raise</span> <span class="n">JSTimeoutException</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">py_mini_racer</span><span class="o">.</span><span class="n">_exc</span><span class="o">.</span><span class="n">JSTimeoutException</span><span class="p">:</span> <span class="n">JavaScript</span> <span class="n">was</span> <span class="n">terminated</span> <span class="n">by</span> <span class="n">timeout</span>
+</span></code></pre></div>
+<p>MiniRacer supports asynchronous execution using JS <code>Promise</code> instances (<em>new in
+v0.10.0</em>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">promise</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="o">...</span>     <span class="s2">&quot;new Promise((res, rej) =&gt; setTimeout(() =&gt; res(42), 10000))&quot;</span><span class="p">)</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">promise</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>  <span class="c1"># blocks for 10 seconds, and then:</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="mi">42</span>
+</span></code></pre></div>
+<p>For more deterministic cleanup behavior, we strongly recommend allocating a MiniRacer
+from a context manager (<em>new in v0.14.0</em>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">mini_racer</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="o">...</span>     <span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;Array.from(&#39;foobar&#39;).reverse().join(&#39;&#39;)&quot;</span><span class="p">))</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="n">raboof</span>
+</span></code></pre></div>
+<p>MiniRacer uses <code>asyncio</code> internally to manage V8. Both <code>MiniRacer()</code> and the
+<code>mini_racer()</code> context manager will capture the currently-running event loop, or you can
+specify a loop explicitly, and in non-async contexts, <code>MiniRacer</code> will launch its own
+event loop with its own background thread to service it. (<em>new in v0.14.0</em>)</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiniRacer</span><span class="p">,</span> <span class="n">mini_racer</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span> <span class="o">=</span> <span class="n">MiniRacer</span><span class="p">()</span>  <span class="c1"># launches a new event loop in a new thread</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>  <span class="c1"># same: launches a new event loop in a new thread</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="o">...</span>     <span class="k">pass</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="o">...</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">demo</span><span class="p">():</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="o">...</span>     <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>  <span class="c1"># reuses the running event loop</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="o">...</span>         <span class="k">pass</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    <span class="o">...</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">demo</span><span class="p">())</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">my_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">(</span><span class="n">my_loop</span><span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>  <span class="c1"># uses the specified event loop</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>    <span class="o">...</span>     <span class="k">pass</span>
+</span></code></pre></div>
+<p>When calling into MiniRacer from async code, you must await promises using <code>await</code>
+(instead of <code>promise.get()</code>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>    <span class="o">%</span> <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">asyncio</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">mini_racer</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="o">...</span>     <span class="n">promise</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="o">...</span>         <span class="s2">&quot;new Promise((res, rej) =&gt; setTimeout(() =&gt; res(42), 10000))&quot;</span><span class="p">)</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="o">...</span>     <span class="nb">print</span><span class="p">(</span><span class="k">await</span> <span class="n">promise</span><span class="p">)</span>  <span class="c1"># yields for 10 seconds, and then:</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    <span class="o">...</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>    <span class="mi">42</span>
+</span></code></pre></div>
+<p><code>MiniRacer</code> does not support the <code>timeout_sec</code> parameter in async evaluation. Instead
+request a cancelable evaluation and use a construct like <code>asyncio.wait_for</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>    <span class="o">%</span> <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">asyncio</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">mini_racer</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    <span class="o">...</span>     <span class="c1"># Use eval_cancelable(...), which has async semantics:</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="o">...</span>     <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">eval_cancelable</span><span class="p">(</span><span class="s1">&#39;while (true) </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="c1"># Spins for 2 seconds and then emits a traceback ending with...</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>        <span class="k">raise</span> <span class="ne">TimeoutError</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc_val</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="ne">TimeoutError</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>    <span class="o">...</span>     <span class="n">func</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;() =&gt; {while (true) </span><span class="si">{}</span><span class="s1">}&#39;</span><span class="p">)</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    <span class="o">...</span>     <span class="c1"># Upgrade func using .cancelable(), which introduces async semantics:</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>    <span class="o">...</span>     <span class="n">cancelable_func</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">cancelable</span><span class="p">()</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>    <span class="o">...</span>     <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">cancelable_func</span><span class="p">(),</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>    <span class="c1"># Spins for 2 seconds and then emits a traceback ending with...</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>        <span class="k">raise</span> <span class="ne">TimeoutError</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc_val</span>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>    <span class="ne">TimeoutError</span>
+</span></code></pre></div>
+<p>You can install callbacks from JavaScript to Python (<em>new in v0.12.0</em>). Only async
+callbacks are supported:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>    <span class="o">%</span> <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">asyncio</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">py_mini_racer</span><span class="w"> </span><span class="kn">import</span> <span class="n">mini_racer</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_file</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span class="o">...</span>     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  <span class="c1"># (or aiofiles would be even better here)</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="o">...</span>         <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="o">...</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">mini_racer</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    <span class="o">...</span>     <span class="k">async</span> <span class="k">with</span> <span class="n">ctx</span><span class="o">.</span><span class="n">wrap_py_function</span><span class="p">(</span><span class="n">read_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">jsfunc</span><span class="p">:</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="o">...</span>         <span class="c1"># &quot;Install&quot; our (async) JS function on the global &quot;this&quot; object:</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>    <span class="o">...</span>         <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;this&#39;</span><span class="p">)[</span><span class="s1">&#39;read_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jsfunc</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    <span class="o">...</span>         <span class="n">d</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;read_file(&quot;/usr/share/dict/words&quot;)&#39;</span><span class="p">)</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    <span class="o">...</span>         <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;AA&#39;</span><span class="p">,</span> <span class="s1">&#39;AAA&#39;</span><span class="p">,</span> <span class="s2">&quot;AA&#39;s&quot;</span><span class="p">,</span> <span class="s1">&#39;AB&#39;</span><span class="p">,</span> <span class="s1">&#39;ABC&#39;</span><span class="p">,</span> <span class="s2">&quot;ABC&#39;s&quot;</span><span class="p">,</span> <span class="s1">&#39;ABCs&#39;</span><span class="p">,</span> <span class="s1">&#39;ABM&#39;</span><span class="p">,</span> <span class="s2">&quot;ABM&#39;s&quot;</span><span class="p">]</span>
+</span></code></pre></div>
+<p><em>Note that adding Python callbacks may degrade the security properties of PyMiniRacer!
+See <a href="architecture/#security-goals">PyMiniRacer's security goals</a>.</em></p>
+<p>MiniRacer supports <a href="https://tc39.es/ecma402/">the ECMA <code>Intl</code> API</a>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>    <span class="c1"># Indonesian dates!</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s1">&#39;Intl.DateTimeFormat([&quot;ban&quot;, &quot;id&quot;]).format(new Date())&#39;</span><span class="p">)</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>    <span class="s1">&#39;16/3/2024&#39;</span>
+</span></code></pre></div>
+<p>V8 heap information can be retrieved:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>    <span class="o">&gt;&gt;&gt;</span> <span class="n">ctx</span><span class="o">.</span><span class="n">heap_stats</span><span class="p">()</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    <span class="p">{</span><span class="s1">&#39;total_physical_size&#39;</span><span class="p">:</span> <span class="mi">1613896</span><span class="p">,</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>     <span class="s1">&#39;used_heap_size&#39;</span><span class="p">:</span> <span class="mi">1512520</span><span class="p">,</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>     <span class="s1">&#39;total_heap_size&#39;</span><span class="p">:</span> <span class="mi">3997696</span><span class="p">,</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>     <span class="s1">&#39;total_heap_size_executable&#39;</span><span class="p">:</span> <span class="mi">3145728</span><span class="p">,</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>     <span class="s1">&#39;heap_size_limit&#39;</span><span class="p">:</span> <span class="mi">1501560832</span><span class="p">}</span>
+</span></code></pre></div>
+<p>A WASM example is available in the
+<a href="https://github.com/bpcreech/PyMiniRacer/blob/master/tests/test_wasm.py"><code>tests</code></a>.</p>
+<h2 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h2>
+<p>PyMiniRacer is compatible with Python 3.10-3.14 and is based on <code>ctypes</code>.</p>
+<p>PyMiniRacer is distributed using <a href="https://pythonwheels.com/">wheels</a> on
+<a href="https://pypi.org/">PyPI</a>. The wheels are intended to provide compatibility with:</p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>x86_64</th>
+<th>aarch64</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macOS ≥ 10.9</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Windows ≥ 10</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Ubuntu ≥ 20.04</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Debian ≥ 11</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>RHEL ≥ 9</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>other Linuxes with glibc ≥ 2.27</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Alpine ≥ 3.19</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>other Linux with musl ≥ 1.2</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p>In order to run on Alpine you must install <code>gcompat</code> and run with
+<code>LD_PRELOAD="/lib/libgcompat.so.0"</code>.</p>
+<p>If you have a up-to-date pip and it doesn't use a wheel, you might have an environment
+for which no wheel is built. Please open an issue.</p>
+<h2 id="developing-and-releasing-pyminiracer">Developing and releasing PyMiniRacer<a class="headerlink" href="#developing-and-releasing-pyminiracer" title="Permanent link">&para;</a></h2>
+<p>See <a href="contributing/">the contribution guide</a>.</p>
+<h2 id="credits">Credits<a class="headerlink" href="#credits" title="Permanent link">&para;</a></h2>
+<p>Built with love by <a href="https://www.sqreen.com">Sqreen</a>.</p>
+<p>PyMiniRacer launch was described in
+<a href="https://web.archive.org/web/20230526172627/https://blog.sqreen.com/embedding-javascript-into-python/"><code>this blog post</code></a>.</p>
+<p>PyMiniRacer is inspired by <a href="https://github.com/SamSaffron/mini_racer">mini_racer</a>, built
+for the Ruby world by Sam Saffron.</p>
+<p>In 2024, PyMiniRacer was revived, and adopted by <a href="https://bpcreech.com">Ben Creech</a>.
+Upon discussion with the original Sqreen authors, we decided to re-launch PyMiniRacer as
+a fork under <a href="https://github.com/bpcreech/PyMiniRacer">https://github.com/bpcreech/PyMiniRacer</a> and
+<a href="https://pypi.org/project/mini-racer/">https://pypi.org/project/mini-racer/</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": [], "search": "assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
