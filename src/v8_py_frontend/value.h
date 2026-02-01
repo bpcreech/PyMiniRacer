@@ -1,7 +1,6 @@
 #ifndef INCLUDE_MINI_RACER_VALUE_H
 #define INCLUDE_MINI_RACER_VALUE_H
 
-#include <v8-array-buffer.h>
 #include <v8-context.h>
 #include <v8-local-handle.h>
 #include <v8-message.h>
@@ -101,8 +100,8 @@ class Value {
 
   Value(const Value& other) = delete;
   Value(Value&& other) noexcept = delete;
-  Value& operator=(const Value& other) = delete;
-  Value& operator=(Value&& other) noexcept = delete;
+  auto operator=(const Value& other) -> Value& = delete;
+  auto operator=(Value&& other) noexcept -> Value& = delete;
 
   using Ptr = std::shared_ptr<Value>;
 

@@ -17,6 +17,8 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
+#include <vector>
 #include "isolate_object_collector.h"
 
 namespace MiniRacer {
@@ -84,7 +86,7 @@ Value::Value(v8::Isolate* isolate,
   }
 }
 
-Value::Value(v8::Isolate* isolate,
+Value::Value(v8::Isolate* /*isolate*/,
              IsolateObjectCollector* isolate_object_collector,
              std::string_view val,
              ValueTypes type)
@@ -98,7 +100,7 @@ Value::Value(v8::Isolate* isolate,
   handle_.bytes = msg.data();
 }
 
-Value::Value(v8::Isolate* isolate,
+Value::Value(v8::Isolate* /*isolate*/,
              IsolateObjectCollector* isolate_object_collector,
              bool val)
     : isolate_object_collector_(isolate_object_collector) {
@@ -107,7 +109,7 @@ Value::Value(v8::Isolate* isolate,
   handle_.int_val = val ? 1 : 0;
 }
 
-Value::Value(v8::Isolate* isolate,
+Value::Value(v8::Isolate* /*isolate*/,
              IsolateObjectCollector* isolate_object_collector,
              int64_t val,
              ValueTypes type)
@@ -117,7 +119,7 @@ Value::Value(v8::Isolate* isolate,
   handle_.int_val = val;
 }
 
-Value::Value(v8::Isolate* isolate,
+Value::Value(v8::Isolate* /*isolate*/,
              IsolateObjectCollector* isolate_object_collector,
              double val,
              ValueTypes type)

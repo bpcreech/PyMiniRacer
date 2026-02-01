@@ -1,6 +1,7 @@
 #include "isolate_object_collector.h"
 #include <v8-isolate.h>
-#include <functional>
+#include <v8-persistent-handle.h>
+#include <v8-value.h>
 #include <mutex>
 #include <tuple>
 #include <utility>

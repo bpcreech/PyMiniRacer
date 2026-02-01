@@ -1,11 +1,12 @@
 #ifndef INCLUDE_MINI_RACER_ISOLATE_OBJECT_COLLECTOR_H
 #define INCLUDE_MINI_RACER_ISOLATE_OBJECT_COLLECTOR_H
 
+#include <v8-persistent-handle.h>
+#include <v8-value.h>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <vector>
-#include "gsl_stub.h"
 #include "isolate_manager.h"
 
 namespace MiniRacer {
