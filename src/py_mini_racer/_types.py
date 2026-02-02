@@ -33,6 +33,10 @@ class JSObject:
     """A JavaScript object."""
 
 
+class JSString(str, JSObject):
+    __slots__ = ()
+
+
 class JSMappedObject(
     MutableMapping["PythonJSConvertedTypes", "PythonJSConvertedTypes"], JSObject
 ):

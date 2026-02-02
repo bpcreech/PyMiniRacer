@@ -12,9 +12,9 @@ IsolateMemoryMonitor::IsolateMemoryMonitor(IsolateManager* isolate_manager)
     : isolate_manager_(isolate_manager),
       state_(std::make_shared<IsolateMemoryMonitorState>()) {
   isolate_manager_
-      ->Run([state = state_](v8::Isolate* isolate) {
-        isolate->AddGCEpilogueCallback(&IsolateMemoryMonitor::StaticGCCallback,
-                                       state.get());
+      ->Schedule([this]() {
+        isolate_manager_->GetIsolate()->AddGCEpilogueCallback(
+            &IsolateMemoryMonitor::StaticGCCallback, state_.get());
       })
       .get();
 }
@@ -36,15 +36,16 @@ auto IsolateMemoryMonitor::IsHardMemoryLimitReached() const -> bool {
 
 void IsolateMemoryMonitor::ApplyLowMemoryNotification() {
   isolate_manager_
-      ->Run([](v8::Isolate* isolate) { isolate->LowMemoryNotification(); })
+      ->Schedule(
+          [this]() { isolate_manager_->GetIsolate()->LowMemoryNotification(); })
       .get();
 }
 
 IsolateMemoryMonitor::~IsolateMemoryMonitor() {
   isolate_manager_
-      ->Run([state = state_](v8::Isolate* isolate) {
-        isolate->RemoveGCEpilogueCallback(
-            &IsolateMemoryMonitor::StaticGCCallback, state.get());
+      ->Schedule([this]() {
+        isolate_manager_->GetIsolate()->RemoveGCEpilogueCallback(
+            &IsolateMemoryMonitor::StaticGCCallback, state_.get());
       })
       .get();
 }

@@ -8,7 +8,7 @@ from traceback import format_exc
 from typing import TYPE_CHECKING, Any, NewType, Protocol, cast
 
 from py_mini_racer._dll import init_mini_racer
-from py_mini_racer._exc import JSEvalException, JSPromiseError
+from py_mini_racer._exc import JSPromiseError
 from py_mini_racer._types import (
     CancelableJSFunction,
     JSArray,
@@ -99,7 +99,7 @@ class Context:
     _active_cancelable_mr_task_callbacks: dict[int, Callable[[ValueHandle], None]] = (
         field(default_factory=dict)
     )
-    _non_cancelable_mr_task_results_queue: queue.Queue[ValueHandle] = field(
+    _non_cancelable_mr_task_results_queue: queue.Queue[RawValueHandleType] = field(
         default_factory=queue.Queue
     )
 
@@ -118,21 +118,19 @@ class Context:
         # All work on the Isolate is blocked until this callback returns. That may
         # may in turn be blocking incoming calls from Python, including other threads,
         # asyncio event loops, etc. So we need to get out fast!
-        # We limit ourselves to wrapping the incoming handle (so we don't leak memory)
-        # and enqueing the incoming work for decoupled processing.
-
-        val_handle = self._wrap_raw_handle(raw_val_handle)
+        # Just shove the handle onto a queue for decoupled processing and get out.
 
         if callback_id == _UNCANCELABLE_TASK_CALLBACK_ID:
-            self._non_cancelable_mr_task_results_queue.put(val_handle)
+            self._non_cancelable_mr_task_results_queue.put(raw_val_handle)
         else:
             self.event_loop.call_soon_threadsafe(
-                self._handle_callback_from_v8_on_event_loop, callback_id, val_handle
+                self._handle_callback_from_v8_on_event_loop, callback_id, raw_val_handle
             )
 
     def _handle_callback_from_v8_on_event_loop(
-        self, callback_id: int, val_handle: ValueHandle
+        self, callback_id: int, raw_val_handle: RawValueHandleType
     ) -> None:
+        val_handle = self._wrap_raw_handle(raw_val_handle)
         try:
             callback = self._active_cancelable_mr_task_callbacks[callback_id]
         except KeyError:
@@ -508,7 +506,7 @@ fn => {
 
             try:
                 value = self._value_handle_to_python(val_handle)
-            except JSEvalException as e:
+            except Exception as e:  # noqa: BLE001
                 future.set_exception(e)
                 return
 
@@ -538,7 +536,8 @@ fn => {
         assert self.are_we_running_on_the_mini_racer_event_loop()
 
         _task_id = dll_method(self._ctx, *args, _UNCANCELABLE_TASK_CALLBACK_ID)
-        val_handle = self._non_cancelable_mr_task_results_queue.get()
+        raw_val_handle = self._non_cancelable_mr_task_results_queue.get()
+        val_handle = self._wrap_raw_handle(raw_val_handle)
         return self._value_handle_to_python(val_handle)
 
     def _value_handle_to_python(

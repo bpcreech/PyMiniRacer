@@ -8,7 +8,6 @@
 #include <utility>
 #include "id_maker.h"
 #include "isolate_manager.h"
-#include "v8-isolate.h"
 
 namespace MiniRacer {
 
@@ -78,7 +77,7 @@ class CancelableTask : public CancelableTaskBase {
                           OnCompleted on_completed,
                           OnCanceled on_canceled);
 
-  void Run(v8::Isolate* isolate);
+  void Run();
   void Cancel(IsolateManager* isolate_manager) override;
 
  private:
@@ -108,10 +107,8 @@ inline auto CancelableTaskManager::Schedule(Runnable runnable,
 
   const uint64_t task_id = task_id_holder.GetId();
 
-  std::future<void> fut = isolate_manager_->Run(
-      [holder = std::move(task_id_holder), task](v8::Isolate* isolate) mutable {
-        task->Run(isolate);
-      });
+  std::future<void> fut = isolate_manager_->Schedule(
+      [holder = std::move(task_id_holder), task]() mutable { task->Run(); });
 
   task->SetFuture(std::move(fut));
 
@@ -129,8 +126,7 @@ inline CancelableTask<Runnable, OnCompleted, OnCanceled>::CancelableTask(
       state_(State::kNotStarted) {}
 
 template <typename Runnable, typename OnCompleted, typename OnCanceled>
-inline void CancelableTask<Runnable, OnCompleted, OnCanceled>::Run(
-    v8::Isolate* isolate) {
+inline void CancelableTask<Runnable, OnCompleted, OnCanceled>::Run() {
   bool was_canceled_before_run = false;
   {
     const std::lock_guard<std::mutex> lock(mutex_);
@@ -146,7 +142,7 @@ inline void CancelableTask<Runnable, OnCompleted, OnCanceled>::Run(
     return;
   }
 
-  auto result = runnable_(isolate);
+  auto result = runnable_();
 
   bool was_canceled_during_run = false;
   {

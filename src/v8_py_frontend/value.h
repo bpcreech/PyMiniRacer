@@ -9,12 +9,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <string_view>
 #include <unordered_map>
-#include <variant>
 #include <vector>
-#include "isolate_object_collector.h"
+#include "isolate_manager.h"
 
 namespace MiniRacer {
 
@@ -24,7 +22,7 @@ enum ValueTypes : uint8_t {
   type_bool = 2,
   type_integer = 3,
   type_double = 4,
-  type_str_utf8 = 5,
+  type_string = 5,
   type_array = 6,
   // type_hash      =   7,  // deprecated
   type_date = 8,
@@ -35,7 +33,8 @@ enum ValueTypes : uint8_t {
   type_function = 100,
   type_shared_array_buffer = 101,
   type_array_buffer = 102,
-  type_promise = 103,
+  type_array_buffer_view = 103,
+  type_promise = 104,
 
   type_execute_exception = 200,
   type_parse_exception = 201,
@@ -71,42 +70,13 @@ struct ValueHandle {
 class Value {
  public:
   Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
-        std::string_view val,
-        ValueTypes result_type);
-  Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
-        bool val);
-  Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
-        int64_t val,
-        ValueTypes result_type);
-  Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
-        double val,
-        ValueTypes result_type);
-  Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
         v8::Local<v8::Context> context,
-        v8::Local<v8::Value> value);
-  Value(v8::Isolate* isolate,
-        IsolateObjectCollector* isolate_object_collector,
-        v8::Local<v8::Context> context,
-        v8::Local<v8::Message> message,
-        v8::Local<v8::Value> exception_obj,
-        ValueTypes result_type);
+        v8::Local<v8::Value> value,
+        ValueTypes type);
 
-  ~Value();
+  using Ptr = std::unique_ptr<Value>;
 
-  Value(const Value& other) = delete;
-  Value(Value&& other) noexcept = delete;
-  auto operator=(const Value& other) -> Value& = delete;
-  auto operator=(Value&& other) noexcept -> Value& = delete;
-
-  using Ptr = std::shared_ptr<Value>;
-
-  auto ToV8Value(v8::Isolate* isolate,
-                 v8::Local<v8::Context> context) -> v8::Local<v8::Value>;
+  auto Global() -> v8::Global<v8::Value>*;
 
   friend class ValueRegistry;
 
@@ -115,22 +85,33 @@ class Value {
   void SaveGlobalHandle(v8::Isolate* isolate, v8::Local<v8::Value> value);
   void CreateBackingStoreRef(v8::Isolate* isolate, v8::Local<v8::Value> value);
 
-  IsolateObjectCollector* isolate_object_collector_;
   ValueHandle handle_;
-  std::variant<std::monostate, std::vector<char>, v8::Global<v8::Value>> data_;
+  v8::Global<v8::Value> global_;
+  std::vector<char> buf_;
 };
 
 class ValueFactory {
  public:
-  explicit ValueFactory(v8::Isolate* isolate,
-                        IsolateObjectCollector* isolate_object_collector);
+  explicit ValueFactory(IsolateManager* isolate_manager);
 
-  template <typename... Params>
-  auto New(Params&&... params) -> Value::Ptr;
+  auto New(v8::Local<v8::Value> value, ValueTypes type) -> Value::Ptr;
+
+  auto NewFromAny(v8::Local<v8::Value> value) -> Value::Ptr;
+
+  auto NewFromBool(bool value) -> Value::Ptr;
+
+  auto NewFromInt(int64_t value, ValueTypes type) -> Value::Ptr;
+
+  auto NewFromDouble(double value, ValueTypes type) -> Value::Ptr;
+
+  auto NewFromString(std::string_view message, ValueTypes type) -> Value::Ptr;
+
+  auto NewFromException(v8::Local<v8::Message> message,
+                        v8::Local<v8::Value> exception_obj,
+                        ValueTypes type) -> Value::Ptr;
 
  private:
-  v8::Isolate* isolate_;
-  IsolateObjectCollector* isolate_object_collector_;
+  IsolateManager* isolate_manager_;
 };
 
 /** We return handles to Values to the MiniRacer user side (i.e.,
@@ -152,21 +133,14 @@ class ValueRegistry {
 
   /** "Re-hydrate" a value from just its handle (only works if it was
    * "Remembered") */
-  auto FromHandle(ValueHandle* handle) -> Value::Ptr;
+  auto FromHandle(ValueHandle* handle) -> Value*;
 
   /** Count the total number of remembered values, for test purposes. */
   auto Count() -> size_t;
 
  private:
-  std::mutex mutex_;
-  std::unordered_map<ValueHandle*, std::shared_ptr<Value>> values_;
+  std::unordered_map<ValueHandle*, Value::Ptr> values_;
 };
-
-template <typename... Params>
-inline auto ValueFactory::New(Params&&... params) -> Value::Ptr {
-  return std::make_shared<Value>(isolate_, isolate_object_collector_,
-                                 std::forward<Params>(params)...);
-}
 
 }  // namespace MiniRacer
 

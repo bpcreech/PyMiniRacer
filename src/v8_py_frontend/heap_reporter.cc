@@ -1,5 +1,6 @@
 #include "heap_reporter.h"
 #include <v8-exception.h>
+#include <v8-isolate.h>
 #include <v8-json.h>
 #include <v8-local-handle.h>
 #include <v8-primitive.h>
@@ -7,18 +8,20 @@
 #include <v8-statistics.h>
 #include <sstream>
 #include <string>
+#include "isolate_manager.h"
 #include "value.h"
 
 namespace MiniRacer {
 
-HeapReporter::HeapReporter(ValueFactory* val_factory)
-    : val_factory_(val_factory) {}
+HeapReporter::HeapReporter(IsolateManager* isolate_manager,
+                           ValueFactory* val_factory)
+    : isolate_manager_(isolate_manager), val_factory_(val_factory) {}
 
-auto HeapReporter::HeapStats(v8::Isolate* isolate) -> Value::Ptr {
-  const v8::Isolate::Scope isolatescope(isolate);
-  const v8::HandleScope handle_scope(isolate);
+auto HeapReporter::HeapStats() -> Value::Ptr {
+  v8::Isolate* isolate = isolate_manager_->GetIsolate();
 
   const v8::TryCatch trycatch(isolate);
+
   const v8::Local<v8::Context> context = v8::Context::New(isolate);
   const v8::Context::Scope context_scope(context);
 
@@ -59,9 +62,10 @@ auto HeapReporter::HeapStats(v8::Isolate* isolate) -> Value::Ptr {
   v8::Local<v8::String> output;
   if (!v8::JSON::Stringify(context, stats_obj).ToLocal(&output) ||
       output.IsEmpty()) {
-    return val_factory_->New("error stringifying heap output", type_str_utf8);
+    return val_factory_->NewFromString("error stringifying heap output",
+                                       type_string);
   }
-  return val_factory_->New(context, output);
+  return val_factory_->NewFromAny(output);
 }
 
 namespace {
@@ -82,13 +86,12 @@ class StringOutputStream : public v8::OutputStream {
 };
 }  // end anonymous namespace
 
-auto HeapReporter::HeapSnapshot(v8::Isolate* isolate) -> Value::Ptr {
-  const v8::Isolate::Scope isolatescope(isolate);
-  const v8::HandleScope handle_scope(isolate);
-  const auto* snap = isolate->GetHeapProfiler()->TakeHeapSnapshot();
+auto HeapReporter::HeapSnapshot() -> Value::Ptr {
+  const auto* snap =
+      isolate_manager_->GetIsolate()->GetHeapProfiler()->TakeHeapSnapshot();
   StringOutputStream sos;
   snap->Serialize(&sos);
-  return val_factory_->New(sos.result(), type_str_utf8);
+  return val_factory_->NewFromString(sos.result(), type_string);
 }
 
 }  // end namespace MiniRacer

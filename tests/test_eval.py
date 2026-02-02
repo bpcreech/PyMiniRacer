@@ -179,6 +179,7 @@ def test_null_byte() -> None:
     result = mr.eval(in_val)
     assert result == s
 
+    del result
     assert_no_v8_objects(mr)
 
 

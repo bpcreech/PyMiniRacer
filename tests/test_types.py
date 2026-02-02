@@ -15,6 +15,7 @@ from py_mini_racer import (
     JSEvalException,
     JSFunction,
     JSObject,
+    JSString,
     JSSymbol,
     JSUndefined,
     MiniRacer,
@@ -65,6 +66,15 @@ def test_str() -> None:
     v("string with null \0 byte")
 
 
+def test_str_is_jsstring() -> None:
+    mr = MiniRacer()
+    s = mr.eval("'foo'")
+    assert isinstance(s, JSString)
+
+    del s
+    assert_no_v8_objects(mr)
+
+
 def test_unicode() -> None:
     ustr = "\N{GREEK CAPITAL LETTER DELTA}"
     mr = MiniRacer()
@@ -72,6 +82,7 @@ def test_unicode() -> None:
     assert ustr == res
     _test_round_trip(mr, ustr)
 
+    del res
     assert_no_v8_objects(mr)
 
 

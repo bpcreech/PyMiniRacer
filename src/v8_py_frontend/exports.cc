@@ -81,7 +81,7 @@ LIB_EXPORT auto mr_alloc_int_val(uint64_t context_id,
   if (!context) {
     return nullptr;
   }
-  return context->AllocValue(val, type);
+  return context->AllocInt(val, type);
 }
 
 LIB_EXPORT auto mr_alloc_double_val(uint64_t context_id,
@@ -92,7 +92,7 @@ LIB_EXPORT auto mr_alloc_double_val(uint64_t context_id,
   if (!context) {
     return nullptr;
   }
-  return context->AllocValue(val, type);
+  return context->AllocDouble(val, type);
 }
 
 LIB_EXPORT auto mr_alloc_string_val(uint64_t context_id,
@@ -104,7 +104,7 @@ LIB_EXPORT auto mr_alloc_string_val(uint64_t context_id,
   if (!context) {
     return nullptr;
   }
-  return context->AllocValue(std::string_view(val, len), type);
+  return context->AllocString(std::string_view(val, len), type);
 }
 
 LIB_EXPORT void mr_cancel_task(uint64_t context_id, uint64_t task_id) {

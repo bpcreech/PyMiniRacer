@@ -4,14 +4,13 @@
 #include <v8-container.h>
 #include <v8-context.h>
 #include <v8-function-callback.h>
-#include <v8-isolate.h>
 #include <v8-persistent-handle.h>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include "callback.h"
-#include "context_holder.h"
 #include "id_maker.h"
+#include "isolate_manager.h"
 #include "value.h"
 
 namespace MiniRacer {
@@ -23,26 +22,28 @@ namespace MiniRacer {
  */
 class JSCallbackCaller {
  public:
-  JSCallbackCaller(ValueFactory* val_factory, CallbackFn callback);
+  JSCallbackCaller(ValueFactory* val_factory,
+                   ValueRegistry* val_registry,
+                   RawCallback callback);
 
-  void DoCallback(v8::Local<v8::Context> context,
-                  uint64_t callback_id,
-                  v8::Local<v8::Array> args);
+  void DoCallback(uint64_t callback_id, v8::Local<v8::Array> args);
 
  private:
   ValueFactory* val_factory_;
-  CallbackFn callback_;
+  ValueRegistry* val_registry_;
+  RawCallback callback_;
 };
 
 /** Creates a JS callback wrapped around the given C callback function pointer.
  */
 class JSCallbackMaker {
  public:
-  JSCallbackMaker(ContextHolder* context_holder,
+  JSCallbackMaker(IsolateManager* isolate_manager,
                   ValueFactory* val_factory,
-                  CallbackFn callback);
+                  ValueRegistry* val_registry,
+                  RawCallback callback);
 
-  auto MakeJSCallback(v8::Isolate* isolate, uint64_t callback_id) -> Value::Ptr;
+  auto MakeJSCallback(uint64_t callback_id) -> Value::Ptr;
 
  private:
   static void OnCalledStatic(const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -52,7 +53,7 @@ class JSCallbackMaker {
   static std::shared_ptr<IdMaker<JSCallbackCaller>> callback_callers_;
   static std::once_flag callback_callers_init_flag_;
 
-  ContextHolder* context_holder_;
+  IsolateManager* isolate_manager_;
   ValueFactory* val_factory_;
   IdHolder<JSCallbackCaller> callback_caller_holder_;
 };

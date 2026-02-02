@@ -10,23 +10,24 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <utility>
 #include "callback.h"
-#include "context_holder.h"
 #include "id_maker.h"
+#include "isolate_manager.h"
 #include "value.h"
 
 namespace MiniRacer {
 
 JSCallbackCaller::JSCallbackCaller(ValueFactory* val_factory,
-                                   CallbackFn callback)
-    : val_factory_(val_factory), callback_(std::move(callback)) {}
+                                   ValueRegistry* val_registry,
+                                   RawCallback callback)
+    : val_factory_(val_factory),
+      val_registry_(val_registry),
+      callback_(callback) {}
 
-void JSCallbackCaller::DoCallback(v8::Local<v8::Context> context,
-                                  uint64_t callback_id,
+void JSCallbackCaller::DoCallback(uint64_t callback_id,
                                   v8::Local<v8::Array> args) {
-  const Value::Ptr args_ptr = val_factory_->New(context, args);
-  callback_(callback_id, args_ptr);
+  callback_(callback_id,
+            val_registry_->Remember(val_factory_->NewFromAny(args)));
 }
 
 std::shared_ptr<IdMaker<JSCallbackCaller>> JSCallbackMaker::callback_callers_;
@@ -40,21 +41,19 @@ auto JSCallbackMaker::GetCallbackCallers()
   return callback_callers_;
 }
 
-JSCallbackMaker::JSCallbackMaker(ContextHolder* context_holder,
+JSCallbackMaker::JSCallbackMaker(IsolateManager* isolate_manager,
                                  ValueFactory* val_factory,
-                                 CallbackFn callback)
-    : context_holder_(context_holder),
+                                 ValueRegistry* val_registry,
+                                 RawCallback callback)
+    : isolate_manager_(isolate_manager),
       val_factory_(val_factory),
-      callback_caller_holder_(
-          std::make_shared<JSCallbackCaller>(val_factory, std::move(callback)),
-          GetCallbackCallers()) {}
+      callback_caller_holder_(std::make_shared<JSCallbackCaller>(val_factory,
+                                                                 val_registry,
+                                                                 callback),
+                              GetCallbackCallers()) {}
 
-auto JSCallbackMaker::MakeJSCallback(v8::Isolate* isolate,
-                                     uint64_t callback_id) -> Value::Ptr {
-  const v8::Isolate::Scope isolate_scope(isolate);
-  const v8::HandleScope handle_scope(isolate);
-  const v8::Local<v8::Context> context = context_holder_->Get()->Get(isolate);
-  const v8::Context::Scope context_scope(context);
+auto JSCallbackMaker::MakeJSCallback(uint64_t callback_id) -> Value::Ptr {
+  v8::Isolate* isolate = isolate_manager_->GetIsolate();
 
   // We create a JS Array containing:
   // {a BigInt indicating the callback caller ID, a BigInt indicating the
@@ -76,11 +75,16 @@ auto JSCallbackMaker::MakeJSCallback(v8::Isolate* isolate,
   const v8::Local<v8::Array> data =
       v8::Array::New(isolate, data_elements.data(), data_elements.size());
 
-  const v8::Local<v8::Function> func =
-      v8::Function::New(context, &JSCallbackMaker::OnCalledStatic, data)
-          .ToLocalChecked();
+  const v8::Local<v8::Context> context = isolate_manager_->GetLocalContext();
 
-  return val_factory_->New(context, func);
+  v8::Local<v8::Function> func;
+  if (!v8::Function::New(context, &JSCallbackMaker::OnCalledStatic, data)
+           .ToLocal(&func)) {
+    return val_factory_->NewFromString("Could not create func",
+                                       type_execute_exception);
+  }
+
+  return val_factory_->NewFromAny(func);
 }
 
 void JSCallbackMaker::OnCalledStatic(
@@ -88,7 +92,6 @@ void JSCallbackMaker::OnCalledStatic(
   v8::Isolate* isolate = info.GetIsolate();
   const v8::HandleScope scope(isolate);
   const v8::Local<v8::Context> context = isolate->GetCurrentContext();
-  const v8::Context::Scope context_scope(context);
 
   const v8::Local<v8::Value> data_value = info.Data();
 
@@ -151,7 +154,7 @@ void JSCallbackMaker::OnCalledStatic(
     return;
   }
 
-  callback_caller->DoCallback(context, callback_id, args);
+  callback_caller->DoCallback(callback_id, args);
 }
 
 }  // end namespace MiniRacer
